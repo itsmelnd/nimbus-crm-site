@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nimbus CRM — Demo</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --panel:#ffffff; --ink:#16181d; --muted:#6b7280; --line:#e5e7eb;
+    --brand:#2f5fe0; --brand-ink:#1b3fa8; --side:#141a2b; --side-ink:#aab2c8;
+    --ok:#0f9d58; --warn:#d97706; --bad:#dc2626; --chip:#eef2ff;
+    --radius:10px; --shadow:0 1px 2px rgba(16,24,40,.06),0 8px 24px rgba(16,24,40,.05);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font:14px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--ink); display:flex;
+  }
+  /* ---------- layout ---------- */
+  aside{
+    width:232px; flex:0 0 232px; background:var(--side); color:var(--side-ink);
+    display:flex; flex-direction:column; padding:16px 12px; gap:2px; min-height:100vh;
+  }
+  .logo{display:flex;align-items:center;gap:9px;padding:6px 8px 18px;color:#fff;font-weight:650;letter-spacing:.2px}
+  .logo i{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#4c7cff,#8b5cf6);display:inline-block}
+  aside a{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:8px 10px;border-radius:8px;color:var(--side-ink);text-decoration:none;font-weight:500;
+  }
+  aside a:hover{background:rgba(255,255,255,.06);color:#fff}
+  aside a.on{background:var(--brand);color:#fff}
+  aside .grp{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#5f6a86;padding:16px 10px 6px}
+  aside .count{font-size:11px;background:rgba(255,255,255,.12);border-radius:20px;padding:1px 7px}
+  aside a.on .count{background:rgba(255,255,255,.25)}
+  .sidefoot{margin-top:auto;padding:10px;font-size:11px;color:#5f6a86;line-height:1.45}
+
+  main{flex:1;min-width:0;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  header{
+    background:var(--panel);border-bottom:1px solid var(--line);padding:14px 24px;
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap
+  }
+  header h1{font-size:18px;margin:0;font-weight:650}
+  header .sub{color:var(--muted);font-size:12.5px}
+  header .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+  #langbtn{min-width:46px;justify-content:center}
+  #currsel{width:auto}
+  #login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:60}
+  .login-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:28px;width:100%;max-width:340px}
+  .login-card h2{margin:0 0 16px;font-size:17px}
+  .login-err{background:#fdeaea;color:#9b1c1c;border:1px solid #f5c6c6;border-radius:8px;padding:8px 10px;font-size:12.5px;margin-bottom:12px}
+  .scroll{overflow:auto;padding:22px 24px 60px}
+
+  /* ---------- bits ---------- */
+  button,.btn{
+    font:inherit;font-weight:550;border:1px solid var(--line);background:#fff;color:var(--ink);
+    padding:7px 12px;border-radius:8px;cursor:pointer;text-decoration:none;display:inline-flex;
+    align-items:center;gap:6px;white-space:nowrap
+  }
+  button:hover,.btn:hover{border-color:#c9ced8;background:#fbfbfc}
+  .primary{background:var(--brand);border-color:var(--brand);color:#fff}
+  .primary:hover{background:var(--brand-ink);border-color:var(--brand-ink)}
+  .ghost{background:transparent;border-color:transparent;color:var(--muted)}
+  .danger{color:var(--bad)}
+  .sm{padding:4px 9px;font-size:12.5px}
+  input,select,textarea{
+    font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:#fff;
+    color:var(--ink);width:100%
+  }
+  input:focus,select:focus,textarea:focus{outline:2px solid #cfdcff;border-color:var(--brand)}
+  label{display:block;font-size:12px;color:var(--muted);font-weight:600;margin:0 0 4px}
+  .field{margin-bottom:12px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .row>*{flex:1;min-width:150px}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .card .hd{padding:13px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+  .card .hd h2{font-size:14px;margin:0;font-weight:650}
+  .card .hd .right{margin-left:auto;display:flex;gap:8px}
+  .card .bd{padding:16px}
+  .grid{display:grid;gap:16px}
+  .kpis{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+  .kpi .n{font-size:26px;font-weight:680;letter-spacing:-.5px;margin:2px 0 0}
+  .kpi .l{color:var(--muted);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+  .kpi .d{font-size:12px;color:var(--muted);margin-top:6px}
+
+  table{width:100%;border-collapse:collapse}
+  th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;
+     padding:9px 16px;border-bottom:1px solid var(--line);background:#fafbfc;white-space:nowrap}
+  td{padding:11px 16px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tr:last-child td{border-bottom:0}
+  tbody tr:hover{background:#fafbff}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  .link{color:var(--brand);cursor:pointer;font-weight:550}
+  .link:hover{text-decoration:underline}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+
+  .tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11.5px;font-weight:650;
+       background:var(--chip);color:var(--brand-ink);white-space:nowrap}
+  .t-grey{background:#f1f2f4;color:#4b5563}
+  .t-blue{background:#e8efff;color:#1b3fa8}
+  .t-green{background:#e6f6ec;color:#0b6b3e}
+  .t-amber{background:#fdf1dc;color:#92400e}
+  .t-red{background:#fdeaea;color:#9b1c1c}
+  .t-purple{background:#f1e9ff;color:#5b21b6}
+  .avatar{width:28px;height:28px;border-radius:50%;background:#e8efff;color:var(--brand-ink);
+          display:inline-flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;flex:0 0 28px}
+  .with-av{display:flex;align-items:center;gap:9px}
+  .empty{padding:36px;text-align:center;color:var(--muted)}
+  .muted{color:var(--muted)}
+  .bar{height:6px;border-radius:6px;background:#eef0f4;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--brand)}
+
+  /* pipeline */
+  .board{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px}
+  .col{flex:0 0 250px;background:#eef0f4;border-radius:10px;padding:9px;min-height:150px}
+  .col.over{outline:2px dashed var(--brand);background:#e8efff}
+  .col h3{font-size:12px;margin:2px 4px 9px;text-transform:uppercase;letter-spacing:.05em;color:#4b5563;
+          display:flex;justify-content:space-between}
+  .deal{background:#fff;border:1px solid var(--line);border-radius:9px;padding:10px;margin-bottom:8px;
+        cursor:grab;box-shadow:0 1px 1px rgba(16,24,40,.04)}
+  .deal:active{cursor:grabbing}
+  .deal .t{font-weight:600;margin-bottom:3px}
+  .deal .m{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:6px;margin-top:6px}
+
+  /* modal */
+  .veil{position:fixed;inset:0;background:rgba(12,16,28,.45);display:flex;align-items:flex-start;
+        justify-content:center;padding:40px 16px;overflow:auto;z-index:50}
+  .modal{background:#fff;border-radius:12px;width:100%;max-width:680px;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+  .modal.wide{max-width:860px}
+  .modal .hd{padding:15px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center}
+  .modal .hd h2{margin:0;font-size:16px}
+  .modal .bd{padding:18px;max-height:66vh;overflow:auto}
+  .modal .ft{padding:13px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
+
+  .toast{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:99}
+  .toast div{background:#16181d;color:#fff;padding:10px 14px;border-radius:9px;box-shadow:var(--shadow);
+             font-size:13px;max-width:340px;animation:pop .18s ease}
+  @keyframes pop{from{transform:translateY(6px);opacity:0}}
+
+  .banner{background:#fff8e6;border:1px solid #f5dfae;color:#7c5b12;border-radius:9px;padding:9px 13px;
+          font-size:12.5px;margin-bottom:16px}
+  .doc{border:1px solid var(--line);border-radius:10px;padding:22px}
+  .doc h3{margin:0 0 2px;font-size:20px}
+  .split{display:grid;grid-template-columns:1.6fr 1fr;gap:16px}
+  @media(max-width:1000px){.split{grid-template-columns:1fr}}
+  @media(max-width:760px){
+    body{display:block} aside{width:100%;flex:none;min-height:0;flex-direction:row;overflow-x:auto;align-items:center}
+    aside .grp,.sidefoot,.logo{display:none} main{height:auto}
+  }
+  .tl{list-style:none;margin:0;padding:0}
+  .tl li{display:flex;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:13px}
+  .tl li:last-child{border:0}
+  .tl .dot{width:8px;height:8px;border-radius:50%;background:var(--brand);margin-top:6px;flex:0 0 8px}
+  .tl time{color:var(--muted);font-size:11.5px;margin-left:auto;white-space:nowrap}
+  .items th,.items td{padding:8px 10px}
+  .items input{padding:6px 8px}
+</style>
+</head>
+<body>
+<aside id="aside">
+  <div class="logo"><i></i> Nimbus CRM</div>
+  <a href="#/dashboard"><span data-i18n="nav.dashboard">Dashboard</span></a>
+  <div class="grp" data-i18n="grp.sales">Sales</div>
+  <a href="#/pipeline"><span data-i18n="nav.pipeline">Pipeline</span> <span class="count" data-c="deals"></span></a>
+  <a href="#/contacts"><span data-i18n="nav.contacts">Contacts</span> <span class="count" data-c="contacts"></span></a>
+  <a href="#/quotes"><span data-i18n="nav.quotes">Offers &amp; Quotes</span> <span class="count" data-c="quotes"></span></a>
+  <div class="grp" data-i18n="grp.revenue">Revenue</div>
+  <a href="#/invoices"><span data-i18n="nav.invoices">Invoices</span> <span class="count" data-c="invoices"></span></a>
+  <a href="#/subscriptions"><span data-i18n="nav.subs">Subscriptions</span> <span class="count" data-c="subs"></span></a>
+  <a href="#/payments"><span data-i18n="nav.payments">Payments</span> <span class="count" data-c="payments"></span></a>
+  <div class="grp" data-i18n="grp.system">System</div>
+  <a href="#/automation"><span data-i18n="nav.automation">Automation log</span></a>
+  <a href="#/users" id="nav-users" style="display:none"><span data-i18n="nav.users">Users</span></a>
+  <a href="#/portal"><span data-i18n="nav.portal">Client portal preview</span></a>
+  <div class="sidefoot">
+    <div data-i18n="side.demo">Demo build — data lives in your Supabase database. No real emails, no real payments.</div>
+    <div style="margin-top:8px;display:flex;gap:6px">
+      <button class="sm ghost" id="resetbtn" data-i18n="side.reset" onclick="resetDemo()">Reset demo data</button>
+      <button class="sm ghost" id="logoutbtn" style="display:none" data-i18n="side.logout" onclick="logout()">Log out</button>
+    </div>
+  </div>
+</aside>
+
+<main>
+  <header>
+    <div>
+      <h1 id="ttl">Dashboard</h1>
+      <div class="sub" id="sub"></div>
+    </div>
+    <div class="right"><span id="acts"></span><select id="currsel" onchange="changeCurr(this.value)"></select><button id="langbtn" class="sm" onclick="toggleLang()"></button></div>
+  </header>
+  <div class="scroll" id="view"></div>
+</main>
+<div class="toast" id="toast"></div>
+
+<div id="login" style="display:none">
+  <div class="login-card">
+    <div class="logo" style="justify-content:center;padding:0 0 4px"><i></i> Nimbus CRM</div>
+    <h2 id="login-title" data-i18n="login.title">Log in</h2>
+    <form id="login-form">
+      <div class="field"><label data-i18n="login.email">Email</label><input type="email" id="login-email" autocomplete="email" required></div>
+      <div class="field"><label data-i18n="login.pass">Password</label><input type="password" id="login-pass" autocomplete="current-password" required></div>
+      <div class="login-err" id="login-err" style="display:none"></div>
+      <button class="primary" type="submit" style="width:100%" data-i18n="login.btn">Log in</button>
+    </form>
+    <p class="muted" style="font-size:12px;text-align:center;margin:12px 0 0" data-i18n="login.hint">Accounts are created by an administrator.</p>
+  </div>
+</div>
+
+<script src="supabase-config.js"></script>
+<script src="supabase-js.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
