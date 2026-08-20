@@ -217,13 +217,14 @@
       <h1 id="ttl">Dashboard</h1>
       <div class="sub" id="sub"></div>
     </div>
-    <div class="right"><span id="acts"></span><select id="currsel" onchange="changeCurr(this.value)"></select><button id="themebtn" class="sm" onclick="toggleTheme()" title=""></button><button id="langbtn" class="sm" onclick="toggleLang()"></button></div>
+    <div class="right"><span id="acts"></span><select id="currsel" onchange="changeCurr(this.value)"></select><button id="themebtn" class="sm themebtn" onclick="toggleTheme()" title=""></button><button id="langbtn" class="sm" onclick="toggleLang()"></button></div>
   </header>
   <div class="scroll" id="view"></div>
 </main>
 <div class="toast" id="toast"></div>
 
 <div id="login" style="display:none">
+  <button class="sm ghost themebtn" onclick="toggleTheme()" style="position:fixed;top:16px;right:16px;z-index:61" title=""></button>
   <div class="login-card">
     <div class="logo" style="justify-content:center;padding:0 0 4px"><i></i> Nimbus CRM</div>
     <h2 id="login-title" data-i18n="login.title">Log in</h2>
@@ -237,8 +238,8 @@
   </div>
 </div>
 
-<script src="supabase-config.js"></script>
-<script src="supabase-js.js"></script>
-<script src="app.js"></script>
+<script src="supabase-config.js?v=21"></script>
+<script src="supabase-js.js?v=21"></script>
+<script src="app.js?v=21"></script>
 </body>
 </html>

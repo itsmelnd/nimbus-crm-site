@@ -288,12 +288,11 @@ let theme = (()=>{
 })();
 function applyTheme(){
   document.documentElement.dataset.theme = theme;
-  const b = document.getElementById('themebtn');
-  if(b){
+  const tip = t(theme==='dark' ? 'theme.light' : 'theme.dark');
+  document.querySelectorAll('.themebtn').forEach(b => {
     b.textContent = theme==='dark' ? '☀️' : '🌙';
-    const tip = t(theme==='dark' ? 'theme.light' : 'theme.dark');
     b.title = tip; b.setAttribute('aria-label', tip);
-  }
+  });
 }
 function toggleTheme(){
   theme = theme==='dark' ? 'light' : 'dark';
