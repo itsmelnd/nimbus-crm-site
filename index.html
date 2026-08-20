@@ -61,7 +61,14 @@
   }
   aside a:hover{background:rgba(255,255,255,.06);color:#fff}
   aside a.on{background:var(--brand);color:#fff}
-  aside .grp{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#5f6a86;padding:16px 10px 6px}
+  aside .grp{
+    font:inherit;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#5f6a86;
+    padding:14px 10px 6px;border:0;background:none;width:100%;display:flex;align-items:center;
+    justify-content:space-between;cursor:pointer;text-align:left;font-weight:650
+  }
+  aside .grp:hover{color:#fff}
+  aside .grp .chev{font-size:10px;opacity:.75;transition:transform .15s ease}
+  aside .grp-items a{margin-left:8px}
   aside .count{font-size:11px;background:rgba(255,255,255,.12);border-radius:20px;padding:1px 7px}
   aside a.on .count{background:rgba(255,255,255,.25)}
   .sidefoot{margin-top:auto;padding:10px;font-size:11px;color:#5f6a86;line-height:1.45}
@@ -192,16 +199,22 @@
 <aside id="aside">
   <div class="logo"><i></i> Nimbus CRM</div>
   <a href="#/dashboard"><span data-i18n="nav.dashboard">Dashboard</span></a>
-  <div class="grp" data-i18n="grp.sales">Sales</div>
-  <a href="#/pipeline"><span data-i18n="nav.pipeline">Pipeline</span> <span class="count" data-c="deals"></span></a>
-  <a href="#/quotes"><span data-i18n="nav.quotes">Offers &amp; Quotes</span> <span class="count" data-c="quotes"></span></a>
-  <div class="grp" data-i18n="grp.revenue">Revenue</div>
-  <a href="#/invoices"><span data-i18n="nav.invoices">Invoices</span> <span class="count" data-c="invoices"></span></a>
-  <a href="#/payments"><span data-i18n="nav.payments">Payments</span> <span class="count" data-c="payments"></span></a>
-  <div class="grp" data-i18n="grp.system">System</div>
-  <a href="#/automation"><span data-i18n="nav.automation">Automation log</span></a>
-  <a href="#/users" id="nav-users" style="display:none"><span data-i18n="nav.users">Users</span></a>
-  <a href="#/portal"><span data-i18n="nav.portal">Client portal preview</span></a>
+  <button class="grp" data-grp="sales" onclick="toggleGrp('sales')"><span data-i18n="grp.sales">Sales</span><i class="chev">▾</i></button>
+  <div class="grp-items" id="grp-sales">
+    <a href="#/pipeline"><span data-i18n="nav.pipeline">Pipeline</span> <span class="count" data-c="deals"></span></a>
+    <a href="#/quotes"><span data-i18n="nav.quotes">Offers &amp; Quotes</span> <span class="count" data-c="quotes"></span></a>
+  </div>
+  <button class="grp" data-grp="revenue" onclick="toggleGrp('revenue')"><span data-i18n="grp.revenue">Revenue</span><i class="chev">▾</i></button>
+  <div class="grp-items" id="grp-revenue">
+    <a href="#/invoices"><span data-i18n="nav.invoices">Invoices</span> <span class="count" data-c="invoices"></span></a>
+    <a href="#/payments"><span data-i18n="nav.payments">Payments</span> <span class="count" data-c="payments"></span></a>
+  </div>
+  <button class="grp" data-grp="system" onclick="toggleGrp('system')"><span data-i18n="grp.system">System</span><i class="chev">▾</i></button>
+  <div class="grp-items" id="grp-system">
+    <a href="#/automation"><span data-i18n="nav.automation">Automation log</span></a>
+    <a href="#/users" id="nav-users" style="display:none"><span data-i18n="nav.users">Users</span></a>
+    <a href="#/portal"><span data-i18n="nav.portal">Client portal preview</span></a>
+  </div>
   <div class="sidefoot">
     <div data-i18n="side.demo">Demo build — data lives in your Supabase database. No real emails, no real payments.</div>
     <div style="margin-top:8px;display:flex;gap:6px">
@@ -238,8 +251,8 @@
   </div>
 </div>
 
-<script src="supabase-config.js?v=21"></script>
-<script src="supabase-js.js?v=21"></script>
-<script src="app.js?v=21"></script>
+<script src="supabase-config.js?v=22"></script>
+<script src="supabase-js.js?v=22"></script>
+<script src="app.js?v=22"></script>
 </body>
 </html>

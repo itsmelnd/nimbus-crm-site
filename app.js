@@ -299,6 +299,32 @@ function toggleTheme(){
   try{ localStorage.setItem('nimbus-theme', theme); }catch(e){}
   applyTheme();
 }
+/* ------------------------- collapsible sidebar groups ------------------------- */
+function toggleGrp(g){
+  const items = document.getElementById('grp-'+g);
+  if(!items) return;
+  const open = items.style.display !== 'none';
+  items.style.display = open ? 'none' : '';
+  const chev = document.querySelector(`.grp[data-grp="${g}"] .chev`);
+  if(chev) chev.textContent = open ? '▸' : '▾';
+  try{
+    const s = JSON.parse(localStorage.getItem('nimbus-grp') || '{}');
+    s[g] = open; /* true = collapsed (user just closed it) */
+    localStorage.setItem('nimbus-grp', JSON.stringify(s));
+  }catch(e){}
+}
+function initGroups(){
+  let s = {};
+  try{ s = JSON.parse(localStorage.getItem('nimbus-grp') || '{}'); }catch(e){}
+  document.querySelectorAll('.grp-items').forEach(el => {
+    const g = el.id.replace('grp-','');
+    if(s[g] === true){
+      el.style.display = 'none';
+      const chev = document.querySelector(`.grp[data-grp="${g}"] .chev`);
+      if(chev) chev.textContent = '▸';
+    }
+  });
+}
 function paintLang(){
   document.title = t('app.title');
   document.querySelectorAll('[data-i18n]').forEach(e => { e.textContent = t(e.dataset.i18n); });
@@ -1297,6 +1323,7 @@ function paintCounts(){
 window.addEventListener('hashchange', route);
 (async function init(){
   try{
+    initGroups();
     if(sb){
       const { data } = await sb.auth.getSession();
       if(data.session){ await afterLogin(data.session); }
