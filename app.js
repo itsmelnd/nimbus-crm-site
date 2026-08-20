@@ -567,6 +567,7 @@ async function afterLogin(session){
   await load();
   save(); paintLang(); route(); fetchRates();
   showApp();
+  subscribeRealtime();
 }
 function showLogin(){
   document.getElementById('login').style.display = 'flex';
@@ -587,6 +588,7 @@ function showApp(){
 }
 async function logout(){
   try{ await sb.auth.signOut(); }catch(e){}
+  if(rtChannel){ try{ sb.removeChannel(rtChannel); }catch(e){} rtChannel = null; }
   ME = null;
   showLogin();
 }
@@ -605,6 +607,45 @@ if(sb){
     }
     await afterLogin(data.session);
   });
+}
+
+/* ------------------------- realtime sync -------------------------
+   Postgres Changes subscription: every open session applies remote
+   INSERT/UPDATE/DELETE to its in-memory db immediately, so changes
+   (e.g. an admin deleting a deal) show up in other users' views live.
+   RLS filters the events server-side: a regular user only receives
+   changes for rows they are allowed to see. On reconnect we reload
+   everything to catch events missed while offline. */
+let rtChannel = null, rtJoined = false;
+function subscribeRealtime(){
+  if(!sb || !ME || rtChannel) return;
+  rtJoined = false;
+  rtChannel = sb.channel('nimbus-sync')
+    .on('postgres_changes', { event: '*', schema: 'public' }, onPgChange)
+    .subscribe(status => {
+      if(status === 'SUBSCRIBED' && rtJoined){
+        load().then(()=>{ paintCounts(); route(); });   /* back online: pull full state */
+      }
+      if(status === 'SUBSCRIBED') rtJoined = true;
+    });
+}
+function onPgChange(p){
+  if(p.table === 'meta'){
+    const v = p.new && p.new.value;
+    if(v){ if(p.new.key === 'clock') db.clock = v.d; if(p.new.key === 'seq') db.seq = v; }
+    return;
+  }
+  if(!db[p.table]) return;
+  if(p.eventType === 'DELETE'){
+    const id = (p.old||{}).id; if(!id) return;
+    db[p.table] = db[p.table].filter(r => r.id !== id);
+  } else if(p.new){
+    const row = fromRow(p.table)(p.new);
+    const arr = db[p.table];
+    const i = arr.findIndex(r => r.id === row.id);
+    if(i >= 0) arr[i] = row; else arr.unshift(row);
+  }
+  route();
 }
 
 /* ------------------------------ helpers ------------------------------ */
