@@ -16,7 +16,7 @@ try{ lang = localStorage.getItem(LANG_KEY) || 'sv'; }catch(e){}
 const STR = {
 en: {
   'app.title':'Nimbus CRM — Demo',
-  'nav.dashboard':'Dashboard','nav.pipeline':'Pipeline','nav.contacts':'Contacts',
+  'nav.dashboard':'Dashboard','nav.pipeline':'Pipeline',
   'nav.quotes':'Offers & Quotes','nav.invoices':'Invoices',
   'nav.payments':'Payments','nav.automation':'Automation log','nav.portal':'Client portal preview',
   'grp.sales':'Sales','grp.revenue':'Revenue','grp.system':'System',
@@ -29,15 +29,15 @@ en: {
   'st.Overdue':'Overdue','st.Cancelled':'Cancelled','st.Void':'Void',
   'btn.save':'Save','btn.cancel':'Cancel','btn.send':'Send','btn.open':'Open','btn.delete':'Delete',
   'btn.view':'View','btn.accept':'Accept','btn.decline':'Decline','btn.quote':'Quote',
-  'btn.newDeal':'New deal','btn.newContact':'New contact','btn.newQuote':'New quote',
+  'btn.newDeal':'New deal','btn.newQuote':'New quote',
   'btn.runAuto':'Run automations','btn.advance':'Advance 7 days','btn.takePay':'Take payment',
   'btn.markAccept':'Mark accepted','btn.markReject':'Mark rejected','btn.genInv':'Generate invoices',
   'btn.clientView':'Client view','btn.sendRemind':'Send reminders','btn.runNow':'Run now',
   'btn.payNow':'Pay now (demo)','btn.create':'Create','btn.add':'Add',
   'btn.board':'Board','btn.openBoard':'Open board','btn.sendToClient':'Send to client',
-  'btn.back':'← All contacts',
+  'btn.back':'← All quotes',
   'btn.billingCycle':'Run billing cycle','btn.pause':'Pause','btn.resume':'Resume','btn.recordPay':'Record payment',
-  'dash.sub':'Demo date: <b>%s</b> · %s contacts · %s open deals',
+  'dash.sub':'Demo date: <b>%s</b> · %s companies · %s open deals',
   'dash.banner':'Demo mode. Data lives in your Supabase database — quotes are not emailed, invoices are not billed, and "payments" are simulated. Use <b>Run automations</b> and <b>Advance 7 days</b> to see the workflow rules fire.',
   'kpi.open':'Open pipeline','kpi.open.d':'%s deals in play',
   'kpi.won':'Won this period','kpi.won.d':'closed / accepted',
@@ -50,22 +50,12 @@ en: {
   'attn.draft':'Draft quote not sent','attn.draftCreated':'created %s',
   'attn.dealLate':'Deal past close date','attn.expected':'expected %s',
   'th.what':'What','th.record':'Record','th.amount':'Amount','th.when':'When',
-  'contacts.sub':'People and the companies they belong to',
-  'th.name':'Name','th.company':'Company','th.phone':'Phone','th.owner':'Owner','th.deals':'Deals','th.value':'Value',
-  'contacts.empty':'No contacts yet.',
-  'contact.sub':'%s · owner %s · added %s','contact.close':'close %s',
-  'contact.deals':'Deals','contact.quotes':'Quotes','contact.invoices':'Invoices',
-  'contact.noDeals':'No deals.','contact.noQuotes':'No quotes yet.','contact.noInvoices':'No invoices yet.',
-  'contact.details':'Details','contact.email':'Email','contact.phone':'Phone','contact.company':'Company',
-  'contact.portal':'Client portal','contact.portalBtn':'Open as this client',
-  'contact.timeline':'Timeline','contact.noLog':'No logged activity.',
   'pipeline.sub':'Drag cards between stages · %s open',
   'confirm.delDeal':'Delete deal "%s"? (demo data only)',
-  'field.dealName':'Deal name','field.value':'Value','field.contact':'Contact','field.stage':'Stage',
+  'field.dealName':'Deal name','field.value':'Value','field.stage':'Stage',
   'field.close':'Expected close','btn.createDeal':'Create deal','toast.dealCreated':'Deal created.',
-  'newContact.title':'New contact','field.fullName':'Full name','field.email':'Email','field.phone':'Phone',
-  'field.company':'Company','field.owner':'Owner','opt.none':'— none —','btn.addContact':'Add contact',
-  'toast.contactAdded':'Contact added.',
+  'field.company':'Company','field.contactPerson':'Contact person','field.contactEmail':'Contact email',
+  'opt.none':'— none —','alert.client':'Enter a contact person name.',
   'quotes.sub':'Draft → Sent → Accepted. Accepting a quote can generate invoices automatically.',
   'th.number':'Number','th.client':'Client','th.status':'Status','th.created':'Created','th.valid':'Valid until',
   'th.total':'Total','th.invoices':'Invoices','quotes.empty':'No quotes yet.',
@@ -118,7 +108,7 @@ en: {
   'log.quoteRejected':'Quote %s rejected','log.quoteAccepted':'Quote %s accepted by %s',
   'log.dealWon':'Deal "%s" won via %s','log.dealMoved':'Deal "%s" moved to %s',
   'log.dealCreated':'Deal "%s" created for %s','log.dealDeleted':'Deal "%s" deleted',
-  'log.contactAdded':'Contact %s added','log.quoteDrafted':'Quote %s drafted for %s · %s',
+  'log.quoteDrafted':'Quote %s drafted for %s · %s',
   'toast.quoteDrafted':'%s created as a draft.',
   'log.invGen':'%s invoice(s) generated from %s (%s)','toast.invCreated':'%s invoice(s) created.',
   'log.subCreated':'Subscription created: %s · %s %s · next %s','toast.subCreated':'Subscription created (simulated).',
@@ -150,7 +140,7 @@ en: {
 },
 sv: {
   'app.title':'Nimbus CRM – Demo',
-  'nav.dashboard':'Översikt','nav.pipeline':'Pipeline','nav.contacts':'Kontakter',
+  'nav.dashboard':'Översikt','nav.pipeline':'Pipeline',
   'nav.quotes':'Offerter','nav.invoices':'Fakturor',
   'nav.payments':'Betalningar','nav.automation':'Automatiseringslogg','nav.portal':'Kundportal',
   'grp.sales':'Försäljning','grp.revenue':'Intäkter','grp.system':'System',
@@ -163,15 +153,15 @@ sv: {
   'st.Overdue':'Förfallen','st.Cancelled':'Avbruten','st.Void':'Makulerad',
   'btn.save':'Spara','btn.cancel':'Avbryt','btn.send':'Skicka','btn.open':'Öppna','btn.delete':'Ta bort',
   'btn.view':'Visa','btn.accept':'Acceptera','btn.decline':'Avböj','btn.quote':'Offert',
-  'btn.newDeal':'Ny affär','btn.newContact':'Ny kontakt','btn.newQuote':'Ny offert',
+  'btn.newDeal':'Ny affär','btn.newQuote':'Ny offert',
   'btn.runAuto':'Kör automatiseringar','btn.advance':'Flytta fram 7 dagar','btn.takePay':'Ta emot betalning',
   'btn.markAccept':'Markera accepterad','btn.markReject':'Markera avvisad','btn.genInv':'Generera fakturor',
   'btn.clientView':'Kundvy','btn.sendRemind':'Skicka påminnelser','btn.runNow':'Kör nu',
   'btn.payNow':'Betala nu (demo)','btn.create':'Skapa','btn.add':'Lägg till',
   'btn.board':'Tavla','btn.openBoard':'Öppna tavla','btn.sendToClient':'Skicka till kund',
-  'btn.back':'← Alla kontakter',
+  'btn.back':'← Alla offerter',
   'btn.billingCycle':'Kör faktureringscykel','btn.pause':'Pausa','btn.resume':'Återuppta','btn.recordPay':'Registrera betalning',
-  'dash.sub':'Demodatum: <b>%s</b> · %s kontakter · %s öppna affärer',
+  'dash.sub':'Demodatum: <b>%s</b> · %s företag · %s öppna affärer',
   'dash.banner':'Demoläge. Data ligger i din Supabase-databas — offerter mejlas inte, fakturor skickas inte och "betalningar" är simulerade. Använd <b>Kör automatiseringar</b> och <b>Flytta fram 7 dagar</b> för att se reglerna utlösas.',
   'kpi.open':'Öppen pipeline','kpi.open.d':'%s affärer på gång',
   'kpi.won':'Vunnet denna period','kpi.won.d':'stängda / accepterade',
@@ -184,22 +174,12 @@ sv: {
   'attn.draft':'Offertutkast ej skickat','attn.draftCreated':'skapad %s',
   'attn.dealLate':'Affär förbi slutdatum','attn.expected':'förväntad %s',
   'th.what':'Vad','th.record':'Post','th.amount':'Belopp','th.when':'När',
-  'contacts.sub':'Personer och företagen de tillhör',
-  'th.name':'Namn','th.company':'Företag','th.phone':'Telefon','th.owner':'Ägare','th.deals':'Affärer','th.value':'Värde',
-  'contacts.empty':'Inga kontakter ännu.',
-  'contact.sub':'%s · ägare %s · tillagd %s','contact.close':'stängs %s',
-  'contact.deals':'Affärer','contact.quotes':'Offerter','contact.invoices':'Fakturor',
-  'contact.noDeals':'Inga affärer.','contact.noQuotes':'Inga offerter ännu.','contact.noInvoices':'Inga fakturor ännu.',
-  'contact.details':'Detaljer','contact.email':'E-post','contact.phone':'Telefon','contact.company':'Företag',
-  'contact.portal':'Klientportal','contact.portalBtn':'Öppna som denna kund',
-  'contact.timeline':'Tidslinje','contact.noLog':'Ingen loggad aktivitet.',
   'pipeline.sub':'Dra kort mellan stadier · %s öppna',
   'confirm.delDeal':'Ta bort affären "%s"? (endast demodata)',
-  'field.dealName':'Affärsnamn','field.value':'Värde','field.contact':'Kontakt','field.stage':'Stadie',
+  'field.dealName':'Affärsnamn','field.value':'Värde','field.stage':'Stadie',
   'field.close':'Förväntad stängning','btn.createDeal':'Skapa affär','toast.dealCreated':'Affär skapad.',
-  'newContact.title':'Ny kontakt','field.fullName':'Fullständigt namn','field.email':'E-post','field.phone':'Telefon',
-  'field.company':'Företag','field.owner':'Ägare','opt.none':'— ingen —','btn.addContact':'Lägg till kontakt',
-  'toast.contactAdded':'Kontakt tillagd.',
+  'field.company':'Företag','field.contactPerson':'Kontaktperson','field.contactEmail':'E-post',
+  'opt.none':'— ingen —','alert.client':'Ange en kontaktperson.',
   'quotes.sub':'Utkast → Skickad → Accepterad. Att acceptera en offert kan generera fakturor automatiskt.',
   'th.number':'Nummer','th.client':'Kund','th.status':'Status','th.created':'Skapad','th.valid':'Giltig till',
   'th.total':'Totalt','th.invoices':'Fakturor','quotes.empty':'Inga offerter ännu.',
@@ -252,7 +232,7 @@ sv: {
   'log.quoteRejected':'Offert %s avvisad','log.quoteAccepted':'Offert %s accepterad av %s',
   'log.dealWon':'Affär "%s" vunnen via %s','log.dealMoved':'Affär "%s" flyttad till %s',
   'log.dealCreated':'Affär "%s" skapad för %s','log.dealDeleted':'Affär "%s" borttagen',
-  'log.contactAdded':'Kontakt %s tillagd','log.quoteDrafted':'Offert %s utkast för %s · %s',
+  'log.quoteDrafted':'Offert %s utkast för %s · %s',
   'toast.quoteDrafted':'%s skapad som utkast.',
   'log.invGen':'%s fakturor genererade från %s (%s)','toast.invCreated':'%s fakturor skapade.',
   'log.subCreated':'Prenumeration skapad: %s · %s %s · nästa %s','toast.subCreated':'Prenumeration skapad (simulerad).',
@@ -379,37 +359,29 @@ function seed(){
       {id:'co_4',name:'Kvist Logistics',industry:'Transport'},
       {id:'co_5',name:'Meridian Dental',industry:'Healthcare'},
     ],
-    contacts: [
-      {id:'ct_1',name:'Anna Lind',email:'anna.lind@northwind.example',phone:'+46 70 111 2233',companyId:'co_1',owner:'You',created:days(base,-64)},
-      {id:'ct_2',name:'Marcus Larsson',email:'marcus@larssonbygg.example',phone:'+46 70 222 3344',companyId:'co_2',owner:'You',created:days(base,-41)},
-      {id:'ct_3',name:'Priya Raman',email:'priya@helios.example',phone:'+1 415 555 0134',companyId:'co_3',owner:'Sofia',created:days(base,-30)},
-      {id:'ct_4',name:'Tomas Kvist',email:'tomas@kvistlog.example',phone:'+46 73 909 1201',companyId:'co_4',owner:'You',created:days(base,-19)},
-      {id:'ct_5',name:'Dr. Elena Vos',email:'elena@meridiandental.example',phone:'+31 6 4455 6677',companyId:'co_5',owner:'Sofia',created:days(base,-9)},
-      {id:'ct_6',name:'Jonas Berg',email:'jonas.berg@northwind.example',phone:'+46 70 555 8899',companyId:'co_1',owner:'You',created:days(base,-4)},
-    ],
     deals: [
-      {id:'dl_1',title:'Line-2 retrofit',contactId:'ct_1',value:48000,stage:'Proposal',close:days(base,12),created:days(base,-40)},
-      {id:'dl_2',title:'Site safety package',contactId:'ct_2',value:16500,stage:'Won',close:days(base,-6),created:days(base,-38)},
-      {id:'dl_3',title:'Rooftop array — phase 1',contactId:'ct_3',value:92000,stage:'Qualified',close:days(base,34),created:days(base,-25)},
-      {id:'dl_4',title:'Fleet tracking rollout',contactId:'ct_4',value:27400,stage:'Contacted',close:days(base,21),created:days(base,-17)},
-      {id:'dl_5',title:'Clinic booking system',contactId:'ct_5',value:11200,stage:'New',close:days(base,45),created:days(base,-8)},
-      {id:'dl_6',title:'Spare parts contract',contactId:'ct_6',value:8400,stage:'Lost',close:days(base,-2),created:days(base,-14)},
+      {id:'dl_1',title:'Line-2 retrofit',companyId:'co_1',contactName:'Anna Lind',contactEmail:'anna.lind@northwind.example',value:48000,stage:'Proposal',close:days(base,12),created:days(base,-40)},
+      {id:'dl_2',title:'Site safety package',companyId:'co_2',contactName:'Marcus Larsson',contactEmail:'marcus@larssonbygg.example',value:16500,stage:'Won',close:days(base,-6),created:days(base,-38)},
+      {id:'dl_3',title:'Rooftop array — phase 1',companyId:'co_3',contactName:'Priya Raman',contactEmail:'priya@helios.example',value:92000,stage:'Qualified',close:days(base,34),created:days(base,-25)},
+      {id:'dl_4',title:'Fleet tracking rollout',companyId:'co_4',contactName:'Tomas Kvist',contactEmail:'tomas@kvistlog.example',value:27400,stage:'Contacted',close:days(base,21),created:days(base,-17)},
+      {id:'dl_5',title:'Clinic booking system',companyId:'co_5',contactName:'Dr. Elena Vos',contactEmail:'elena@meridiandental.example',value:11200,stage:'New',close:days(base,45),created:days(base,-8)},
+      {id:'dl_6',title:'Spare parts contract',companyId:'co_1',contactName:'Jonas Berg',contactEmail:'jonas.berg@northwind.example',value:8400,stage:'Lost',close:days(base,-2),created:days(base,-14)},
     ],
     quotes: [
-      {id:'qt_1',no:'Q-1041',dealId:'dl_2',contactId:'ct_2',status:'Accepted',created:days(base,-20),valid:days(base,10),tax:25,
+      {id:'qt_1',no:'Q-1041',dealId:'dl_2',companyId:'co_2',contactName:'Marcus Larsson',contactEmail:'marcus@larssonbygg.example',status:'Accepted',created:days(base,-20),valid:days(base,10),tax:25,
        items:[{desc:'Safety audit & documentation',qty:1,price:6500},{desc:'On-site training (per day)',qty:2,price:2500},{desc:'Signage kit',qty:1,price:5000}]},
-      {id:'qt_2',no:'Q-1042',dealId:'dl_1',contactId:'ct_1',status:'Sent',created:days(base,-6),valid:days(base,14),tax:25,
+      {id:'qt_2',no:'Q-1042',dealId:'dl_1',companyId:'co_1',contactName:'Anna Lind',contactEmail:'anna.lind@northwind.example',status:'Sent',created:days(base,-6),valid:days(base,14),tax:25,
        items:[{desc:'Retrofit engineering',qty:1,price:28000},{desc:'Control cabinet',qty:2,price:7500},{desc:'Commissioning',qty:1,price:5000}]},
-      {id:'qt_3',no:'Q-1043',dealId:'dl_4',contactId:'ct_4',status:'Draft',created:days(base,-1),valid:days(base,21),tax:25,
+      {id:'qt_3',no:'Q-1043',dealId:'dl_4',companyId:'co_4',contactName:'Tomas Kvist',contactEmail:'tomas@kvistlog.example',status:'Draft',created:days(base,-1),valid:days(base,21),tax:25,
        items:[{desc:'Tracker units',qty:40,price:520},{desc:'Installation',qty:1,price:4200},{desc:'Platform licence (yr 1)',qty:1,price:2400}]},
     ],
     invoices: [
-      {id:'in_1',no:'INV-2041',quoteId:'qt_1',contactId:'ct_2',label:'lbl.dep50',amount:7812.50,status:'Paid',issued:days(base,-19),due:days(base,-5)},
-      {id:'in_2',no:'INV-2042',quoteId:'qt_1',contactId:'ct_2',label:'lbl.mil25',amount:3906.25,status:'Sent',issued:days(base,-12),due:days(base,-3)},
-      {id:'in_3',no:'INV-2043',quoteId:'qt_1',contactId:'ct_2',label:'lbl.fin25',amount:3906.25,status:'Draft',issued:days(base,-12),due:days(base,18)},
+      {id:'in_1',no:'INV-2041',quoteId:'qt_1',companyId:'co_2',contactName:'Marcus Larsson',contactEmail:'marcus@larssonbygg.example',label:'lbl.dep50',amount:7812.50,status:'Paid',issued:days(base,-19),due:days(base,-5)},
+      {id:'in_2',no:'INV-2042',quoteId:'qt_1',companyId:'co_2',contactName:'Marcus Larsson',contactEmail:'marcus@larssonbygg.example',label:'lbl.mil25',amount:3906.25,status:'Sent',issued:days(base,-12),due:days(base,-3)},
+      {id:'in_3',no:'INV-2043',quoteId:'qt_1',companyId:'co_2',contactName:'Marcus Larsson',contactEmail:'marcus@larssonbygg.example',label:'lbl.fin25',amount:3906.25,status:'Draft',issued:days(base,-12),due:days(base,18)},
     ],
     subs: [
-      {id:'sb_1',contactId:'ct_3',name:'Monitoring & maintenance',amount:1450,cycle:'Monthly',status:'Active',next:days(base,9),started:days(base,-82)},
+      {id:'sb_1',companyId:'co_3',contactName:'Priya Raman',contactEmail:'priya@helios.example',name:'Monitoring & maintenance',amount:1450,cycle:'Monthly',status:'Active',next:days(base,9),started:days(base,-82)},
     ],
     payments: [
       {id:'pm_1',invoiceId:'in_1',amount:7812.50,method:'Card (demo)',ref:'ch_demo_8f21a',date:days(base,-18)},
@@ -437,12 +409,11 @@ if(window.SUPABASE_URL && window.SUPABASE_ANON_KEY && window.supabase && typeof 
 }
 const TBL = {
   companies:{db:'companies', map:{}},
-  contacts:{db:'contacts', map:{companyId:'company_id'}},
-  deals:{db:'deals', map:{contactId:'contact_id'}},
-  quotes:{db:'quotes', map:{dealId:'deal_id', contactId:'contact_id'}},
-  invoices:{db:'invoices', map:{quoteId:'quote_id', contactId:'contact_id'}},
-  subs:{db:'subs', map:{contactId:'contact_id'}},
-  payments:{db:'payments', map:{invoiceId:'invoice_id'}},
+  deals:{db:'deals', map:{companyId:'company_id', contactName:'contact_name', contactEmail:'contact_email'}},
+  quotes:{db:'quotes', map:{dealId:'deal_id', companyId:'company_id', contactName:'contact_name', contactEmail:'contact_email'}},
+  invoices:{db:'invoices', map:{quoteId:'quote_id', companyId:'company_id', contactName:'contact_name', contactEmail:'contact_email'}},
+  subs:{db:'subs', map:{companyId:'company_id', contactName:'contact_name', contactEmail:'contact_email'}},
+  payments:{db:'payments', map:{invoiceId:'invoice_id', companyId:'company_id'}},
   log:{db:'log', map:{}},
 };
 const REV = Object.fromEntries(Object.entries(TBL).map(([t,v])=>[t, Object.fromEntries(Object.entries(v.map).map(([a,b])=>[b,a]))]));
@@ -459,7 +430,7 @@ async function doSync(){
   const base = synced || Object.fromEntries(Object.keys(TBL).map(t=>[t,[]]));
   /* sequential + dependency order (invoices reference quotes, payments reference
      invoices…) so foreign keys are always satisfied */
-  const ORDER = ['companies','contacts','deals','quotes','invoices','subs','payments','log'];
+  const ORDER = ['companies','deals','quotes','invoices','subs','payments','log'];
   for(const t of ORDER){
     const cur = db[t]||[], b = base[t]||[];
     const bIds = new Set(b.map(r=>r.id)), cIds = new Set(cur.map(r=>r.id));
@@ -493,7 +464,7 @@ async function load(){
   const fallback = () => {
     try{ const raw = localStorage.getItem(KEY); db = raw ? JSON.parse(raw) : seed(); }
     catch(e){ storageOK = false; db = seed(); }
-    if(!db || !db.contacts) db = seed();
+    if(!db || !db.companies) db = seed();
     synced = null;
   };
   if(!sb){ fallback(); return; }
@@ -501,11 +472,10 @@ async function load(){
     const qs = Object.keys(TBL).map(t=>sb.from(TBL[t].db).select('*'));
     qs.push(sb.from('meta').select('key,value'));
     const rs = await Promise.all(qs);
-    const [companies,contacts,deals,quotes,invoices,subs,payments,log,meta] = rs.map(r=>r.data||[]);
-    if(contacts.length || meta.length){
+    const [companies,deals,quotes,invoices,subs,payments,log,meta] = rs.map(r=>r.data||[]);
+    if(companies.length || deals.length || meta.length){
       db = {
         companies: companies.map(fromRow('companies')),
-        contacts: contacts.map(fromRow('contacts')),
         deals: deals.map(fromRow('deals')),
         quotes: quotes.map(fromRow('quotes')),
         invoices: invoices.map(fromRow('invoices')),
@@ -644,8 +614,8 @@ function onPgChange(p){
 
 /* ------------------------------ helpers ------------------------------ */
 const byId = (arr,id) => arr.find(x=>x.id===id);
-const contact = id => byId(db.contacts,id) || {name:'—',email:''};
-const company = id => (byId(db.companies, (contact(id).companyId)) || {name:'—'}).name;
+const person = r => (r && (r.contactName||'').trim()) ? r.contactName : '—';
+const company = id => (byId(db.companies,id) || {name:'—'}).name;
 const quoteSub = q => q.items.reduce((s,i)=>s + i.qty*i.price, 0);
 const quoteTax = q => quoteSub(q) * (q.tax/100);
 const quoteTotal = q => quoteSub(q) + quoteTax(q);
@@ -723,7 +693,7 @@ function vDashboard(){
   const mrr = db.subs.filter(s=>s.status==='Active')
                      .reduce((s,x)=>s + (x.cycle==='Yearly'? x.amount/12 : x.cycle==='Quarterly'? x.amount/3 : x.amount),0);
 
-  head(t('nav.dashboard'), t('dash.sub', fmtDate(iso(today())), db.contacts.length, open.length),
+  head(t('nav.dashboard'), t('dash.sub', fmtDate(iso(today())), db.companies.length, open.length),
     adminOnly(`<button onclick="runAutomations()">${t('btn.runAuto')}</button>
      <button onclick="advance(7)">${t('btn.advance')}</button>
      <button class="primary" onclick="newDeal()">${t('btn.newDeal')}</button>`));
@@ -772,93 +742,21 @@ const kpi = (l,n,d) => `<div class="card kpi"><div class="bd"><div class="l">${l
 function attentionTable(){
   const rows = [];
   db.invoices.filter(isOverdue).forEach(i=>rows.push(
-    [t('attn.overdue'), `${i.no} · ${contact(i.contactId).name}`, money(i.amount-paidOf(i)),
+    [t('attn.overdue'), `${i.no} · ${person(i)}`, money(i.amount-paidOf(i)),
      t('attn.quoteValid', fmtDate(i.due)), adminOnly(`<button class="sm" onclick="payInvoice('${i.id}')">${t('btn.takePay')}</button>`)]));
   db.quotes.filter(q=>q.status==='Sent').forEach(q=>rows.push(
-    [t('attn.quoteWait'), `${q.no} · ${contact(q.contactId).name}`, money(quoteTotal(q)),
+    [t('attn.quoteWait'), `${q.no} · ${person(q)}`, money(quoteTotal(q)),
      t('attn.quoteValid', fmtDate(q.valid)), `<button class="sm" onclick="go('#/quote/${q.id}')">${t('btn.open')}</button>`]));
   db.quotes.filter(q=>q.status==='Draft').forEach(q=>rows.push(
-    [t('attn.draft'), `${q.no} · ${contact(q.contactId).name}`, money(quoteTotal(q)),
+    [t('attn.draft'), `${q.no} · ${person(q)}`, money(quoteTotal(q)),
      t('attn.draftCreated', fmtDate(q.created)), adminOnly(`<button class="sm primary" onclick="sendQuote('${q.id}')">${t('btn.send')}</button>`)]));
   db.deals.filter(d=>!['Won','Lost'].includes(d.stage) && d.close < iso(today())).forEach(d=>rows.push(
-    [t('attn.dealLate'), `${d.title} · ${contact(d.contactId).name}`, money(d.value),
+    [t('attn.dealLate'), `${d.title} · ${person(d)}`, money(d.value),
      t('attn.expected', fmtDate(d.close)), `<button class="sm" onclick="go('#/pipeline')">${t('btn.board')}</button>`]));
   if(!rows.length) return '<div class="empty">'+t('attn.clear')+'</div>';
   return `<table><thead><tr><th>${t('th.what')}</th><th>${t('th.record')}</th><th class="num">${t('th.amount')}</th><th>${t('th.when')}</th><th></th></tr></thead>
     <tbody>${rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td class="num">${r[2]}</td>
       <td class="muted">${r[3]}</td><td style="text-align:right">${r[4]}</td></tr>`).join('')}</tbody></table>`;
-}
-
-/* ---------------- contacts ---------------- */
-function vContacts(){
-  head(t('nav.contacts'), t('contacts.sub'),
-    adminOnly(`<button class="primary" onclick="newContact()">${t('btn.newContact')}</button>`));
-  const rows = db.contacts.map(c=>{
-    const ds = db.deals.filter(d=>d.contactId===c.id);
-    const val = ds.filter(d=>!['Lost'].includes(d.stage)).reduce((s,d)=>s+d.value,0);
-    return `<tr>
-      <td><div class="with-av"><span class="avatar">${init(c.name)}</span>
-        <div><div class="link" onclick="go('#/contact/${c.id}')">${esc(c.name)}</div>
-        <div class="muted" style="font-size:12px">${esc(c.email)}</div></div></div></td>
-      <td>${esc(company(c.id))}</td>
-      <td>${esc(c.phone)}</td>
-      <td>${esc(ownerTxt(c.owner))}</td>
-      <td class="num">${ds.length}</td>
-      <td class="num">${money(val)}</td>
-      <td style="text-align:right"><button class="sm" onclick="newQuote('${c.id}')">${t('btn.newQuote')}</button></td>
-    </tr>`;
-  }).join('');
-  view().innerHTML = `<div class="card"><table>
-    <thead><tr><th>${t('th.name')}</th><th>${t('th.company')}</th><th>${t('th.phone')}</th><th>${t('th.owner')}</th>
-      <th class="num">${t('th.deals')}</th><th class="num">${t('th.value')}</th><th></th></tr></thead>
-    <tbody>${rows||''}</tbody></table>${db.contacts.length?'':'<div class="empty">'+t('contacts.empty')+'</div>'}</div>`;
-}
-
-function vContact(id){
-  const c = byId(db.contacts,id); if(!c) return notFound();
-  head(c.name, t('contact.sub', esc(company(id)), esc(ownerTxt(c.owner)), fmtDate(c.created)),
-    adminOnly(`<button onclick="newDeal('${id}')">${t('btn.newDeal')}</button>
-     <button class="primary" onclick="newQuote('${id}')">${t('btn.newQuote')}</button>`));
-  const ds = db.deals.filter(d=>d.contactId===id);
-  const qs = db.quotes.filter(q=>q.contactId===id);
-  const is = db.invoices.filter(i=>i.contactId===id);
-  const first = c.name.split(' ')[0];
-  view().innerHTML = `
-  <a class="btn sm ghost" href="#/contacts">${t('btn.back')}</a>
-  <div class="split" style="margin-top:12px">
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="card"><div class="hd"><h2>${t('contact.deals')}</h2></div>
-        ${ds.length?`<table><tbody>${ds.map(d=>`<tr><td>${esc(d.title)}</td><td>${tag(d.stage)}</td>
-          <td class="muted">${t('contact.close', fmtDate(d.close))}</td><td class="num">${money(d.value)}</td></tr>`).join('')}</tbody></table>`
-          :'<div class="empty">'+t('contact.noDeals')+'</div>'}</div>
-      <div class="card"><div class="hd"><h2>${t('contact.quotes')}</h2></div>
-        ${qs.length?`<table><tbody>${qs.map(q=>`<tr><td class="link" onclick="go('#/quote/${q.id}')">${q.no}</td>
-          <td>${tag(q.status)}</td><td class="muted">${fmtDate(q.created)}</td>
-          <td class="num">${money(quoteTotal(q))}</td></tr>`).join('')}</tbody></table>`
-          :'<div class="empty">'+t('contact.noQuotes')+'</div>'}</div>
-      <div class="card"><div class="hd"><h2>${t('contact.invoices')}</h2></div>
-        ${is.length?`<table><tbody>${is.map(i=>`<tr><td class="mono">${i.no}</td><td>${esc(t(i.label))}</td>
-          <td>${tag(invStatus(i))}</td><td class="num">${money(i.amount)}</td></tr>`).join('')}</tbody></table>`
-          :'<div class="empty">'+t('contact.noInvoices')+'</div>'}</div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="card"><div class="hd"><h2>${t('contact.details')}</h2></div><div class="bd">
-        <div class="field"><label>${t('contact.email')}</label>${esc(c.email)}</div>
-        <div class="field"><label>${t('contact.phone')}</label>${esc(c.phone)}</div>
-        <div class="field"><label>${t('contact.company')}</label>${esc(company(id))}</div>
-        <div class="field"><label>${t('contact.portal')}</label>
-          <a class="btn sm" href="#/portal/${id}">${t('contact.portalBtn')}</a></div>
-      </div></div>
-      <div class="card"><div class="hd"><h2>${t('contact.timeline')}</h2></div><div class="bd">
-        <ul class="tl">${db.log.filter(l=>{
-            const hay = l.text || JSON.stringify(l.p||[]);
-            return hay.includes(first);
-          })
-          .slice(0,8).map(l=>`<li><span class="dot"></span><span>${esc(logText(l))}</span><time>${esc(l.at)}</time></li>`).join('')
-          || '<li class="muted">'+t('contact.noLog')+'</li>'}</ul>
-      </div></div>
-    </div>
-  </div>`;
 }
 
 /* ---------------- pipeline ---------------- */
@@ -872,10 +770,10 @@ function vPipeline(){
       <h3><span>${t('st.'+s)}</span><span>${ds.length} · ${money(ds.reduce((a,d)=>a+d.value,0))}</span></h3>
       ${ds.map(d=>`<div class="deal" draggable="true" ondragstart="dragStart(event,'${d.id}')">
         <div class="t">${esc(d.title)}</div>
-        <div class="muted" style="font-size:12px">${esc(contact(d.contactId).name)} · ${esc(company(d.contactId))}</div>
+        <div class="muted" style="font-size:12px">${esc(person(d))} · ${esc(company(d.companyId))}</div>
         <div class="m"><b>${money(d.value)}</b><span>${fmtDate(d.close)}</span></div>
         ${adminOnly(`<div style="margin-top:8px;display:flex;gap:6px">
-          <button class="sm" onclick="newQuote('${d.contactId}','${d.id}')">${t('btn.quote')}</button>
+          <button class="sm" onclick="newQuote('${d.id}')">${t('btn.quote')}</button>
           <button class="sm ghost danger" onclick="delDeal('${d.id}')">${t('btn.delete')}</button>
         </div>`)}</div>`).join('')}
     </div>`;
@@ -894,45 +792,29 @@ function delDeal(id){
   const d=byId(db.deals,id); if(!d||!confirm(t('confirm.delDeal', d.title))) return;
   db.deals = db.deals.filter(x=>x.id!==id); logIt('deal','log.dealDeleted', d.title); save(); route();
 }
-function newDeal(contactId){
+function newDeal(companyId){
   modal({title:t('btn.newDeal'), body:`
     <div class="row">
       <div class="field"><label>${t('field.dealName')}</label><input name="title" required placeholder="e.g. Line-2 retrofit"></div>
       <div class="field"><label>${t('field.value')}</label><input name="value" type="number" min="0" step="100" value="10000" required></div>
     </div>
     <div class="row">
-      <div class="field"><label>${t('field.contact')}</label><select name="contactId">${db.contacts.map(c=>
-        `<option value="${c.id}" ${c.id===contactId?'selected':''}>${esc(c.name)} — ${esc(company(c.id))}</option>`).join('')}</select></div>
+      <div class="field"><label>${t('field.company')}</label><select name="companyId">${db.companies.map(c=>
+        `<option value="${c.id}" ${c.id===companyId?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
       <div class="field"><label>${t('field.stage')}</label><select name="stage">${STAGES.map(s=>`<option value="${s}">${t('st.'+s)}</option>`).join('')}</select></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>${t('field.contactPerson')} *</label><input name="contactName" required placeholder="Jane Doe"></div>
+      <div class="field"><label>${t('field.contactEmail')}</label><input name="contactEmail" type="email" placeholder="jane@example.com"></div>
       <div class="field"><label>${t('field.close')}</label><input name="close" type="date" value="${days(today(),30)}"></div>
     </div>`,
     ok:t('btn.createDeal'),
     onSubmit(d){
-      if(!d.title) return false;
-      db.deals.unshift({id:uid('dl'),title:d.title,contactId:d.contactId,value:+d.value||0,
-        stage:d.stage,close:d.close||days(today(),30),created:iso(today())});
-      logIt('deal','log.dealCreated', d.title, contact(d.contactId).name);
+      if(!d.title || !d.contactName) return false;
+      db.deals.unshift({id:uid('dl'),title:d.title,companyId:d.companyId,contactName:d.contactName,
+        contactEmail:d.contactEmail||'',value:+d.value||0,stage:d.stage,close:d.close||days(today(),30),created:iso(today())});
+      logIt('deal','log.dealCreated', d.title, d.contactName);
       toast(t('toast.dealCreated'));
-    }});
-}
-function newContact(){
-  modal({title:t('newContact.title'), body:`
-    <div class="row">
-      <div class="field"><label>${t('field.fullName')}</label><input name="name" required placeholder="Jane Doe"></div>
-      <div class="field"><label>${t('field.email')}</label><input name="email" type="email" placeholder="jane@example.com"></div>
-    </div>
-    <div class="row">
-      <div class="field"><label>${t('field.phone')}</label><input name="phone" placeholder="+46 70 000 0000"></div>
-      <div class="field"><label>${t('field.company')}</label><select name="companyId">${db.companies.map(c=>
-        `<option value="${c.id}">${esc(c.name)}</option>`).join('')}<option value="">${t('opt.none')}</option></select></div>
-      <div class="field"><label>${t('field.owner')}</label><select name="owner"><option>You</option><option>Sofia</option><option>Erik</option></select></div>
-    </div>`,
-    ok:t('btn.addContact'),
-    onSubmit(d){
-      if(!d.name) return false;
-      db.contacts.unshift({id:uid('ct'),name:d.name,email:d.email||'',phone:d.phone||'',
-        companyId:d.companyId||null,owner:d.owner,created:iso(today())});
-      logIt('contact','log.contactAdded', d.name); toast(t('toast.contactAdded'));
     }});
 }
 
@@ -942,7 +824,7 @@ function vQuotes(){
     adminOnly(`<button class="primary" onclick="newQuote()">${t('btn.newQuote')}</button>`));
   const rows = db.quotes.map(q=>`<tr>
     <td class="mono link" onclick="go('#/quote/${q.id}')">${q.no}</td>
-    <td>${esc(contact(q.contactId).name)}<div class="muted" style="font-size:12px">${esc(company(q.contactId))}</div></td>
+    <td>${esc(person(q))}<div class="muted" style="font-size:12px">${esc(company(q.companyId))}</div></td>
     <td>${tag(q.status)}</td>
     <td class="muted">${fmtDate(q.created)}</td>
     <td class="muted">${fmtDate(q.valid)}</td>
@@ -958,11 +840,16 @@ function vQuotes(){
     <tbody>${rows}</tbody></table>${db.quotes.length?'':'<div class="empty">'+t('quotes.empty')+'</div>'}</div>`;
 }
 
-function newQuote(contactId, dealId){
+function newQuote(dealId){
+  const dl = dealId && byId(db.deals,dealId);
   modal({title:t('newQuote.title'), wide:true, body:`
     <div class="row">
-      <div class="field"><label>${t('field.client')}</label><select name="contactId">${db.contacts.map(c=>
-        `<option value="${c.id}" ${c.id===contactId?'selected':''}>${esc(c.name)} — ${esc(company(c.id))}</option>`).join('')}</select></div>
+      <div class="field"><label>${t('field.company')}</label><select name="companyId">${db.companies.map(c=>
+        `<option value="${c.id}" ${c.id===(dl?dl.companyId:undefined)?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
+      <div class="field"><label>${t('field.contactPerson')} *</label><input name="contactName" value="${esc(dl?dl.contactName:'')}" required placeholder="Jane Doe"></div>
+      <div class="field"><label>${t('field.contactEmail')}</label><input name="contactEmail" type="email" value="${esc(dl?dl.contactEmail:'')}" placeholder="jane@example.com"></div>
+    </div>
+    <div class="row">
       <div class="field"><label>${t('field.linkedDeal')}</label><select name="dealId"><option value="">${t('opt.none')}</option>${db.deals.map(d=>
         `<option value="${d.id}" ${d.id===dealId?'selected':''}>${esc(d.title)}</option>`).join('')}</select></div>
       <div class="field"><label>${t('field.valid')}</label><input name="valid" type="date" value="${days(today(),21)}"></div>
@@ -979,10 +866,12 @@ function newQuote(contactId, dealId){
       const desc=[].concat(d.desc||[]), qty=[].concat(d.qty||[]), price=[].concat(d.price||[]);
       const items = desc.map((t,i)=>({desc:t,qty:+qty[i]||0,price:+price[i]||0})).filter(i=>i.desc && i.qty>0);
       if(!items.length){ alert(t('alert.lines')); return false; }
+      if(!d.contactName){ alert(t('alert.client')); return false; }
       const no = 'Q-' + (db.seq.q++);
-      db.quotes.unshift({id:uid('qt'),no,dealId:d.dealId||null,contactId:d.contactId,status:'Draft',
+      db.quotes.unshift({id:uid('qt'),no,dealId:d.dealId||null,companyId:d.companyId,
+        contactName:d.contactName,contactEmail:d.contactEmail||'',status:'Draft',
         created:iso(today()),valid:d.valid,tax:+d.tax||0,items});
-      logIt('quote','log.quoteDrafted', no, contact(d.contactId).name, money(items.reduce((s,i)=>s+i.qty*i.price,0)*(1+(+d.tax||0)/100)));
+      logIt('quote','log.quoteDrafted', no, d.contactName, money(items.reduce((s,i)=>s+i.qty*i.price,0)*(1+(+d.tax||0)/100)));
       toast(t('toast.quoteDrafted', no));
     }});
 }
@@ -994,15 +883,14 @@ function addLine(){ document.querySelector('#lines tbody').insertAdjacentHTML('b
 
 function vQuote(id){
   const q = byId(db.quotes,id); if(!q) return notFound();
-  const c = contact(q.contactId);
-  head(t('quote.head', q.no), `${esc(c.name)} · ${esc(company(q.contactId))} · ${tag(q.status)}`,
+  head(t('quote.head', q.no), `${esc(person(q))} · ${esc(company(q.companyId))} · ${tag(q.status)}`,
     adminOnly(
       (q.status==='Draft'?`<button class="primary" onclick="sendQuote('${q.id}')">${t('btn.sendToClient')}</button>`:'') +
       (q.status==='Sent'?`<button class="primary" onclick="acceptQuote('${q.id}')">${t('btn.markAccept')}</button>
         <button onclick="rejectQuote('${q.id}')">${t('btn.markReject')}</button>`:'') +
       (q.status==='Accepted'?`<button class="primary" onclick="makeInvoices('${q.id}')">${t('btn.genInv')}</button>`:'')
     ) +
-    `<a class="btn" href="#/portal/${q.contactId}">${t('btn.clientView')}</a>`);
+    `<a class="btn" href="#/portal/${q.companyId}">${t('btn.clientView')}</a>`);
   const invs = invoicesOf(q.id);
   view().innerHTML = `
   <a class="btn sm ghost" href="#/quotes">${t('btn.back')}</a>
@@ -1025,7 +913,6 @@ function vQuote(id){
   </div>`;
 }
 function quoteDoc(q){
-  const c = contact(q.contactId);
   return `<div class="doc">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
       <div><h3>${t('doc.offer', q.no)}</h3><div class="muted">${t('doc.issued', fmtDate(q.created), fmtDate(q.valid))}</div></div>
@@ -1033,7 +920,7 @@ function quoteDoc(q){
         Demo Street 1, Stockholm<br>billing@nimbus.example</div></div>
     </div>
     <div style="margin-bottom:16px"><label>${t('doc.prepared')}</label>
-      <b>${esc(c.name)}</b><div class="muted">${esc(company(q.contactId))} · ${esc(c.email)}</div></div>
+      <b>${esc(person(q))}</b><div class="muted">${esc(company(q.companyId))} · ${esc(q.contactEmail||'')}</div></div>
     <table class="items"><thead><tr><th>${t('th.description')}</th><th class="num">${t('th.qty')}</th>
       <th class="num">${t('th.unit')}</th><th class="num">${t('th.amount')}</th></tr></thead><tbody>
       ${q.items.map(i=>`<tr><td>${esc(i.desc)}</td><td class="num">${i.qty}</td>
@@ -1051,7 +938,7 @@ function quoteDoc(q){
 function sendQuote(id){
   const q=byId(db.quotes,id); if(!q) return;
   q.status='Sent';
-  logIt('quote','log.quoteSent', q.no, contact(q.contactId).name);
+  logIt('quote','log.quoteSent', q.no, person(q));
   logIt('auto','log.followup', q.no, fmtDate(days(today(),3)));
   save(); route(); toast(t('toast.quoteSent', q.no));
 }
@@ -1065,7 +952,7 @@ function acceptQuote(id){
   const q=byId(db.quotes,id); if(!q) return;
   q.status='Accepted';
   const d = q.dealId && byId(db.deals,q.dealId); if(d){ d.stage='Won'; logIt('deal','log.dealWon', d.title, q.no); }
-  logIt('quote','log.quoteAccepted', q.no, contact(q.contactId).name);
+  logIt('quote','log.quoteAccepted', q.no, person(q));
   save(); route();
   makeInvoices(id, true);
 }
@@ -1097,7 +984,8 @@ function makeInvoices(id, autoPrompt){
     ok:t('btn.create'),
     onSubmit(d){
       if(d.plan==='sub'){
-        const s={id:uid('sb'),contactId:q.contactId,name:`${q.no} ${t('sub.retainerName')}`,amount:+d.amount||0,
+        const s={id:uid('sb'),companyId:q.companyId,contactName:q.contactName,contactEmail:q.contactEmail,
+          name:`${q.no} ${t('sub.retainerName')}`,amount:+d.amount||0,
           cycle:d.cycle,status:'Active',next:d.due,started:iso(today())};
         db.subs.unshift(s);
         logIt('sub','log.subCreated', s.name, money(s.amount), t('cycle.'+s.cycle.toLowerCase()), fmtDate(s.next));
@@ -1108,7 +996,8 @@ function makeInvoices(id, autoPrompt){
         : [['lbl.dep50',.5],['lbl.mil25',.25],['lbl.fin25',.25]];
       parts.forEach(([lbl,frac],ix)=>{
         const no='INV-'+(db.seq.i++);
-        db.invoices.unshift({id:uid('in'),no,quoteId:q.id,contactId:q.contactId,label:lbl,
+        db.invoices.unshift({id:uid('in'),no,quoteId:q.id,companyId:q.companyId,contactName:q.contactName,
+          contactEmail:q.contactEmail,label:lbl,
           amount:Math.round(total*frac*100)/100, status: d.send==='yes' && ix===0 ? 'Sent':'Draft',
           issued:iso(today()), due: days(d.due, ix*30)});
       });
@@ -1126,7 +1015,7 @@ function vInvoices(){
     const st=invStatus(i), q = byId(db.quotes,i.quoteId);
     return `<tr>
       <td class="mono">${i.no}</td>
-      <td>${esc(contact(i.contactId).name)}<div class="muted" style="font-size:12px">${esc(t(i.label))}</div></td>
+      <td>${esc(person(i))}<div class="muted" style="font-size:12px">${esc(t(i.label))}</div></td>
       <td>${q?`<span class="link" onclick="go('#/quote/${q.id}')">${q.no}</span>`:'<span class="muted">—</span>'}</td>
       <td>${tag(st)}</td>
       <td class="muted">${fmtDate(i.issued)}</td>
@@ -1144,7 +1033,7 @@ function vInvoices(){
 }
 function sendInvoice(id){
   const i=byId(db.invoices,id); if(!i) return;
-  i.status='Sent'; logIt('invoice','log.invSent', i.no, contact(i.contactId).name);
+  i.status='Sent'; logIt('invoice','log.invSent', i.no, person(i));
   save(); route(); toast(t('toast.invSent', i.no));
 }
 function payInvoice(id){
@@ -1158,7 +1047,7 @@ function payInvoice(id){
         <option>Card (demo)</option><option>Bank transfer (demo)</option><option>Invoice/Net 30 (demo)</option></select></div>
       <div class="field"><label>${t('field.date')}</label><input name="date" type="date" value="${iso(today())}"></div>
     </div>
-    <p class="muted" style="font-size:12px">${t('th.client')}: ${esc(contact(inv.contactId).name)} · ${esc(contact(inv.contactId).email)}</p>`,
+    <p class="muted" style="font-size:12px">${t('th.client')}: ${esc(person(inv))} · ${esc(inv.contactEmail||'')}</p>`,
     ok:t('btn.recordPay'),
     onSubmit(d){
       const amt = Math.round((+d.amount||0)*100)/100;
@@ -1177,9 +1066,9 @@ function vPayments(){
   view().innerHTML = `<div class="card"><table>
     <thead><tr><th>${t('th.date')}</th><th>${t('th.invoice')}</th><th>${t('th.client')}</th><th>${t('th.method')}</th><th>${t('th.ref')}</th><th class="num">${t('th.amount')}</th></tr></thead>
     <tbody>${db.payments.map(p=>{
-      const i=byId(db.invoices,p.invoiceId)||{no:'—',contactId:null};
+      const i=byId(db.invoices,p.invoiceId)||{no:'—',contactName:null};
       return `<tr><td class="muted">${fmtDate(p.date)}</td><td class="mono">${i.no}</td>
-        <td>${esc(i.contactId?contact(i.contactId).name:'—')}</td><td>${esc(methodTxt(p.method))}</td>
+        <td>${esc(person(i))}</td><td>${esc(methodTxt(p.method))}</td>
         <td class="mono muted">${esc(p.ref)}</td><td class="num">${money(p.amount)}</td></tr>`;
     }).join('')}</tbody></table>${db.payments.length?'':'<div class="empty">'+t('payments.empty')+'</div>'}</div>`;
 }
@@ -1207,14 +1096,15 @@ function vAutomation(){
 function runAutomations(){
   let n=0;
   db.invoices.filter(isOverdue).forEach(i=>{
-    logIt('auto','log.reminder', i.no, money(i.amount-paidOf(i)), contact(i.contactId).name); n++;
+    logIt('auto','log.reminder', i.no, money(i.amount-paidOf(i)), person(i)); n++;
   });
   db.quotes.filter(q=>q.status==='Sent' && q.valid < iso(today())).forEach(q=>{
     q.status='Rejected'; logIt('auto','log.expired', q.no); n++;
   });
   db.subs.filter(s=>s.status==='Active' && s.next <= iso(today())).forEach(s=>{
     const no='INV-'+(db.seq.i++);
-    db.invoices.unshift({id:uid('in'),no,quoteId:null,contactId:s.contactId,label:s.name+' — '+t('cycle.'+s.cycle.toLowerCase()),
+    db.invoices.unshift({id:uid('in'),no,quoteId:null,companyId:s.companyId,contactName:s.contactName,
+      contactEmail:s.contactEmail,label:s.name+' — '+t('cycle.'+s.cycle.toLowerCase()),
       amount:s.amount,status:'Sent',issued:iso(today()),
       due:days(today(),14)});
     s.next = days(s.next, s.cycle==='Yearly'?365:s.cycle==='Quarterly'?90:30);
@@ -1231,18 +1121,18 @@ function advance(n){
 
 /* ---------------- client portal ---------------- */
 function vPortal(id){
-  const c = id ? byId(db.contacts,id) : db.contacts[0];
+  const c = id ? byId(db.companies,id) : db.companies[0];
   if(!c) return notFound();
   head(t('nav.portal'), t('portal.sub', esc(c.name)),
-    `<select onchange="go('#/portal/'+this.value)" style="width:auto">${db.contacts.map(x=>
+    `<select onchange="go('#/portal/'+this.value)" style="width:auto">${db.companies.map(x=>
       `<option value="${x.id}" ${x.id===c.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`);
-  const qs = db.quotes.filter(q=>q.contactId===c.id && q.status!=='Draft');
-  const is = db.invoices.filter(i=>i.contactId===c.id && i.status!=='Draft');
+  const qs = db.quotes.filter(q=>q.companyId===c.id && q.status!=='Draft');
+  const is = db.invoices.filter(i=>i.companyId===c.id && i.status!=='Draft');
   view().innerHTML = `
   <div class="banner">${t('portal.banner')}</div>
   <div class="card" style="margin-bottom:16px"><div class="bd" style="display:flex;align-items:center;gap:14px">
     <span class="avatar" style="width:44px;height:44px;flex:0 0 44px;font-size:15px">${init(c.name)}</span>
-    <div><b style="font-size:16px">${esc(c.name)}</b><div class="muted">${esc(company(c.id))} · ${esc(c.email)}</div></div>
+    <div><b style="font-size:16px">${esc(c.name)}</b><div class="muted">${esc(c.industry||'')}</div></div>
   </div></div>
   <div class="card" style="margin-bottom:16px"><div class="hd"><h2>${t('portal.offers')}</h2></div>
     ${qs.length?`<table><thead><tr><th>${t('th.offer')}</th><th>${t('th.status')}</th><th>${t('th.valid')}</th><th class="num">${t('th.total')}</th><th></th></tr></thead>
@@ -1357,8 +1247,6 @@ function notFound(){ head(t('notFound.title'),''); view().innerHTML = '<div clas
 function go(h){ location.hash = h; }
 const ROUTES = [
   [/^#?\/?$|^#\/dashboard$/, vDashboard],
-  [/^#\/contacts$/, vContacts],
-  [/^#\/contact\/(.+)$/, vContact],
   [/^#\/pipeline$/, vPipeline],
   [/^#\/quotes$/, vQuotes],
   [/^#\/quote\/(.+)$/, vQuote],
@@ -1376,7 +1264,7 @@ function route(){
   notFound();
 }
 function paintCounts(){
-  const c = {deals:db.deals.filter(d=>!['Won','Lost'].includes(d.stage)).length, contacts:db.contacts.length,
+  const c = {deals:db.deals.filter(d=>!['Won','Lost'].includes(d.stage)).length,
     quotes:db.quotes.length, invoices:db.invoices.filter(i=>i.status!=='Paid').length,
     payments:db.payments.length};
   document.querySelectorAll('[data-c]').forEach(e=>e.textContent = c[e.dataset.c] ?? '');
