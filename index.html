@@ -185,7 +185,11 @@
 
   .toast{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:99}
   .toast div{background:var(--toast-bg);color:var(--toast-ink);padding:10px 14px;border-radius:9px;box-shadow:var(--shadow);
-             font-size:13px;max-width:340px;animation:pop .18s ease}
+    display:flex;align-items:center;gap:10px;max-width:340px}
+  .toast div button{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:5px 12px;
+    font-weight:600;cursor:pointer;white-space:nowrap}
+  .toast div button:hover{opacity:.88}
+  .toast div{font-size:13px;animation:pop .18s ease}
   @keyframes pop{from{transform:translateY(6px);opacity:0}}
 
   .banner{background:var(--banner-bg);border:1px solid var(--banner-line);color:var(--banner-ink);border-radius:9px;padding:9px 13px;
@@ -282,8 +286,8 @@
   </div>
 </div>
 
-<script src="supabase-config.js?v=26"></script>
-<script src="supabase-js.js?v=26"></script>
-<script src="app.js?v=26"></script>
+<script src="supabase-config.js?v=27"></script>
+<script src="supabase-js.js?v=27"></script>
+<script src="app.js?v=27"></script>
 </body>
 </html>

@@ -61,10 +61,10 @@ en: {
   'pipeline.sub':'Drag cards between stages · %s open',
   'board.compact':'Compact','board.roomy':'Large',
   'companies.sub':'Companies and their pipelines','companies.empty':'No companies yet.',
-  'companies.hasDeals':'This company has deals — remove or move its deals first.',
-  'field.industry':'Industry','confirm.delCompany':'Delete company "%s"?',
+  'companies.deleted':'Company and %d deals deleted.','companies.undo':'Undo',
+  'field.industry':'Industry','confirm.delCompanyCascade':'Delete "%s" and all %d related deals? Quotes, invoices, subscriptions and payments will be deleted too.',
   'field.name':'Name',
-  'toast.companyCreated':'Company added.','toast.companyUpdated':'Company updated.','toast.companyDeleted':'Company deleted.',
+  'toast.companyCreated':'Company added.','toast.companyUpdated':'Company updated.','toast.companyDeleted':'Company deleted.','toast.undo':'Done — everything restored.',
   'list.search':'Search…','list.all':'All statuses','list.none':'No matches.',
   'btn.newCompany':'New company','btn.edit':'Edit','btn.print':'Print',
   'th.industry':'Industry','th.deals':'Deals','th.value':'Value','th.name':'Name',
@@ -204,10 +204,10 @@ sv: {
   'pipeline.sub':'Dra kort mellan stadier · %s öppna',
   'board.compact':'Kompakt','board.roomy':'Stor',
   'companies.sub':'Företag och deras pipelines','companies.empty':'Inga företag ännu.',
-  'companies.hasDeals':'Företaget har affärer — ta bort eller flytta dem först.',
-  'field.industry':'Bransch','confirm.delCompany':'Ta bort företaget "%s"?',
+  'companies.deleted':'Företaget och %d affärer raderades.','companies.undo':'Ångra',
+  'field.industry':'Bransch','confirm.delCompanyCascade':'Ta bort "%s" och alla %d tillhörande affärer? Offerter, fakturor, prenumerationer och betalningar raderas också.',
   'field.name':'Namn',
-  'toast.companyCreated':'Företag tillagt.','toast.companyUpdated':'Företag uppdaterat.','toast.companyDeleted':'Företag borttaget.',
+  'toast.companyCreated':'Företag tillagt.','toast.companyUpdated':'Företag uppdaterat.','toast.companyDeleted':'Företag borttaget.','toast.undo':'Klart — allt återställt.',
   'list.search':'Sök…','list.all':'Alla statusar','list.none':'Inga träffar.',
   'btn.newCompany':'Nytt företag','btn.edit':'Ändra','btn.print':'Skriv ut',
   'th.industry':'Bransch','th.deals':'Affärer','th.value':'Värde','th.name':'Namn',
@@ -303,7 +303,7 @@ sv: {
 };
 const t = (k, ...p) => {
   const s = (STR[lang] && STR[lang][k]) || STR.en[k] || k;
-  return p.length ? s.replace(/%s/g, () => p.shift()) : s;
+  return p.length ? s.replace(/%[sd]/g, () => p.shift()) : s;
 };
 const setLang = l => {
   if(l === lang) return;
@@ -524,15 +524,19 @@ let syncTimer = null;
 
 async function doSync(){
   const base = synced || Object.fromEntries(Object.keys(TBL).map(t=>[t,[]]));
-  /* sequential + dependency order (invoices reference quotes, payments reference
-     invoices…) so foreign keys are always satisfied */
+  /* upserts run parent → child, deletes run child → parent, so foreign keys
+     are always satisfied (e.g. cascade-deleting a company with deals) */
   const ORDER = ['companies','deals','quotes','invoices','subs','payments','log'];
   for(const t of ORDER){
     const cur = db[t]||[], b = base[t]||[];
-    const bIds = new Set(b.map(r=>r.id)), cIds = new Set(cur.map(r=>r.id));
+    const bIds = new Set(b.map(r=>r.id));
     const ups = cur.filter(r=>!bIds.has(r.id) || JSON.stringify(r)!==JSON.stringify(b.find(x=>x.id===r.id))).map(r=>toRow(t,r));
-    const del = b.filter(r=>!cIds.has(r.id)).map(r=>r.id);
     if(ups.length) await sb.from(TBL[t].db).upsert(ups);
+  }
+  for(const t of [...ORDER].reverse()){
+    const cur = db[t]||[], b = base[t]||[];
+    const cIds = new Set(cur.map(r=>r.id));
+    const del = b.filter(r=>!cIds.has(r.id)).map(r=>r.id);
     if(del.length) await sb.from(TBL[t].db).delete().in('id', del);
   }
   await sb.from('meta').upsert([
@@ -677,6 +681,7 @@ if(sb){
    changes for rows they are allowed to see. On reconnect we reload
    everything to catch events missed while offline. */
 let rtChannel = null, rtJoined = false;
+let undoBuf = null, undoTimer = null;   /* cascade-delete snapshot for undo */
 function subscribeRealtime(){
   if(!sb || !ME || rtChannel) return;
   rtJoined = false;
@@ -698,6 +703,7 @@ function onPgChange(p){
   if(!db[p.table]) return;
   if(p.eventType === 'DELETE'){
     const id = (p.old||{}).id; if(!id) return;
+    if(undoBuf && undoBuf[p.table] && undoBuf[p.table].some(r=>r.id===id)) return;  /* pending undo: don't drop restored rows */
     db[p.table] = db[p.table].filter(r => r.id !== id);
   } else if(p.new){
     const row = fromRow(p.table)(p.new);
@@ -1041,10 +1047,52 @@ function editCompany(id){
 }
 function delCompany(id){
   const c = byId(db.companies,id); if(!c) return;
-  if(db.deals.some(d=>d.companyId===id)){ alert(t('companies.hasDeals')); return; }
-  if(!confirm(t('confirm.delCompany', c.name))) return;
+  /* collect the full cascade: company → deals → quotes → invoices → subs/payments */
+  const deals   = db.deals.filter(d=>d.companyId===id);
+  const dealIds = new Set(deals.map(d=>d.id));
+  const quotes  = db.quotes.filter(q=>q.companyId===id || dealIds.has(q.dealId));
+  const qIds    = new Set(quotes.map(q=>q.id));
+  const invoices= db.invoices.filter(i=>i.companyId===id || qIds.has(i.quoteId));
+  const iIds    = new Set(invoices.map(i=>i.id));
+  const subs    = db.subs.filter(s=>s.companyId===id);
+  const payments= db.payments.filter(p=>p.companyId===id || iIds.has(p.invoiceId));
+  if(!confirm(t('confirm.delCompanyCascade', c.name, deals.length))) return;
+  /* remove child → parent so in-memory references never dangle */
+  db.payments  = db.payments.filter(p=>p.companyId!==id && !iIds.has(p.invoiceId));
+  db.invoices  = db.invoices.filter(i=>!iIds.has(i.id));
+  db.quotes    = db.quotes.filter(q=>!qIds.has(q.id));
+  db.subs      = db.subs.filter(s=>s.companyId!==id);
+  db.deals     = db.deals.filter(d=>!dealIds.has(d.id));
   db.companies = db.companies.filter(x=>x.id!==id);
-  toast(t('toast.companyDeleted')); save(); route();
+  /* keep a snapshot so the user can undo within 10 s */
+  undoBuf = {company:c, deals, quotes, invoices, subs, payments};
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(clearUndo, 10000);
+  showUndoBar(t('companies.deleted', deals.length));
+  save(); route();
+}
+function showUndoBar(msg){
+  const old = document.getElementById('undo-bar'); if(old) old.remove();
+  const el = document.createElement('div'); el.id = 'undo-bar';
+  el.innerHTML = `<span>${msg}</span><button onclick="undoDeleteCompany()">${t('companies.undo')}</button>`;
+  document.getElementById('toast').appendChild(el);
+}
+function clearUndo(){
+  undoBuf = null;
+  const el = document.getElementById('undo-bar'); if(el) el.remove();
+}
+function undoDeleteCompany(){
+  const u = undoBuf; if(!u) return;
+  clearTimeout(undoTimer);
+  /* restore parent → child so FK order is satisfied; same ids as before */
+  db.companies.unshift(u.company);
+  for(const r of u.deals)    db.deals.unshift(r);
+  for(const r of u.quotes)   db.quotes.unshift(r);
+  for(const r of u.invoices) db.invoices.unshift(r);
+  for(const r of u.subs)     db.subs.unshift(r);
+  for(const r of u.payments) db.payments.unshift(r);
+  clearUndo();
+  toast(t('toast.undo')); save(); route();
 }
 
 /* ---------------- quotes ---------------- */
