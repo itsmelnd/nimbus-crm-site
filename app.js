@@ -74,6 +74,7 @@ en: {
   'confirm.delDeal':'Delete deal "%s"? (demo data only)',
   'field.dealName':'Deal name','field.value':'Value','field.stage':'Stage',
   'field.close':'Expected close','btn.createDeal':'Create deal','toast.dealCreated':'Deal created.',
+  'deal.newCustomer':'New customer','deal.nameRequired':'Enter a name.',
   'field.company':'Customer','field.contactPerson':'Contact person','field.contactEmail':'Contact email',
   'customers.company':'Companies','customers.private':'Private customers','field.email':'Email','field.phone':'Phone',
   'field.valid':'Valid until','field.total':'Total',
@@ -229,6 +230,7 @@ sv: {
   'confirm.delDeal':'Ta bort affären "%s"? (endast demodata)',
   'field.dealName':'Affärsnamn','field.value':'Värde','field.stage':'Stadie',
   'field.close':'Förväntad stängning','btn.createDeal':'Skapa affär','toast.dealCreated':'Affär skapad.',
+  'deal.newCustomer':'Ny kund','deal.nameRequired':'Ange ett namn.',
   'field.company':'Kund','field.contactPerson':'Kontaktperson','field.contactEmail':'E-post',
   'customers.company':'Företagskunder','customers.private':'Privatkunder','field.email':'E-post','field.phone':'Telefon',
   'field.valid':'Giltig till','field.total':'Totalt',
@@ -1002,9 +1004,11 @@ function newDeal(companyId){
       <div class="field"><label>${t('field.value')}</label><input name="value" type="number" min="0" step="100" value="10000" required></div>
     </div>
     <div class="row">
-      <div class="field"><label>${t('field.company')}</label><select name="companyId">${customerOptions(companyId)}</select></div>
+      <div class="field"><label>${t('field.company')}</label><select name="companyId">${customerOptions(companyId)}</select>
+        <button type="button" class="sm" style="margin-top:6px" onclick="dealNewCustomer()">＋ ${t('deal.newCustomer')}</button></div>
       <div class="field"><label>${t('field.stage')}</label><select name="stage">${STAGES.map(s=>`<option value="${s}">${t('st.'+s)}</option>`).join('')}</select></div>
     </div>
+    <div id="dealnewcust" style="display:none;border:1px dashed var(--line,#999);border-radius:8px;padding:10px 12px;margin-bottom:12px"></div>
     <div class="row">
       <div class="field"><label>${t('field.contactPerson')} *</label><input name="contactName" required placeholder="Jane Doe"></div>
       <div class="field"><label>${t('field.contactEmail')}</label><input name="contactEmail" type="email" placeholder="jane@example.com"></div>
@@ -1018,6 +1022,56 @@ function newDeal(companyId){
       logIt('deal','log.dealCreated', d.title, d.contactName);
       toast(t('toast.dealCreated'));
     }});
+}
+/* inline "new customer" inside the new-deal modal: creates the customer,
+   selects it in the picker and closes the inline form — no navigation needed */
+function dealNewCustomer(){
+  const box = document.getElementById('dealnewcust'); if(!box) return;
+  if(box.innerHTML){ box.innerHTML = ''; box.style.display = 'none'; return; }   /* toggle off */
+  box.style.display = '';
+  box.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <b style="font-size:13px">${t('deal.newCustomer')}</b>
+      <select id="dnc-type" style="width:auto" onchange="dealNewCustomerType()">
+        <option value="company">${t('customers.company')}</option>
+        <option value="person">${t('customers.private')}</option>
+      </select>
+    </div>
+    <div class="row">
+      <div class="field"><label>${t('field.name')}</label><input id="dnc-name" placeholder="ACME AB / Anna Andersson"></div>
+      <div class="field dnc-co"><label>${t('field.industry')}</label><input id="dnc-industry" placeholder="Manufacturing"></div>
+      <div class="field dnc-pers" style="display:none"><label>${t('field.email')}</label><input id="dnc-email" type="email" placeholder="anna@example.com"></div>
+      <div class="field dnc-pers" style="display:none"><label>${t('field.phone')}</label><input id="dnc-phone" placeholder="070-123 45 67"></div>
+    </div>
+    <button type="button" class="sm primary" onclick="dealAddCustomer()">${t('btn.create')}</button>`;
+}
+function dealNewCustomerType(){
+  const pers = document.getElementById('dnc-type').value === 'person';
+  document.querySelectorAll('.dnc-co').forEach(e=>e.style.display = pers ? 'none' : '');
+  document.querySelectorAll('.dnc-pers').forEach(e=>e.style.display = pers ? '' : 'none');
+}
+function dealAddCustomer(){
+  const name = (document.getElementById('dnc-name').value || '').trim();
+  if(!name){ toast(t('deal.nameRequired')); return; }
+  const isPerson = document.getElementById('dnc-type').value === 'person';
+  const c = {id:uid('co'), name,
+    industry: isPerson ? null : (document.getElementById('dnc-industry').value || null),
+    email: isPerson ? (document.getElementById('dnc-email').value || '') : null,
+    phone: isPerson ? (document.getElementById('dnc-phone').value || '') : null,
+    type: isPerson ? 'person' : 'company'};
+  db.companies.unshift(c);
+  const sel = document.getElementById('mform').querySelector('select[name="companyId"]');
+  if(sel){
+    const opt = document.createElement('option');
+    opt.value = c.id; opt.textContent = c.name; opt.selected = true;
+    const grp = [...sel.querySelectorAll('optgroup')].find(g=>g.label === t(isPerson?'customers.private':'customers.company'));
+    (grp || sel).appendChild(opt);
+    sel.value = c.id;
+  }
+  const box = document.getElementById('dealnewcust');
+  if(box){ box.innerHTML = ''; box.style.display = 'none'; }
+  toast(t('toast.companyCreated'));
+  save();
 }
 
 /* ---------------- companies / customer list ---------------- */
