@@ -52,6 +52,7 @@ en: {
   'attn.dealLate':'Deal past close date','attn.expected':'expected %s',
   'th.what':'What','th.record':'Record','th.amount':'Amount','th.when':'When',
   'pipeline.sub':'Drag cards between stages · %s open',
+  'board.compact':'Compact','board.roomy':'Large',
   'confirm.delDeal':'Delete deal "%s"? (demo data only)',
   'field.dealName':'Deal name','field.value':'Value','field.stage':'Stage',
   'field.close':'Expected close','btn.createDeal':'Create deal','toast.dealCreated':'Deal created.',
@@ -178,6 +179,7 @@ sv: {
   'attn.dealLate':'Affär förbi slutdatum','attn.expected':'förväntad %s',
   'th.what':'Vad','th.record':'Post','th.amount':'Belopp','th.when':'När',
   'pipeline.sub':'Dra kort mellan stadier · %s öppna',
+  'board.compact':'Kompakt','board.roomy':'Stor',
   'confirm.delDeal':'Ta bort affären "%s"? (endast demodata)',
   'field.dealName':'Affärsnamn','field.value':'Värde','field.stage':'Stadie',
   'field.close':'Förväntad stängning','btn.createDeal':'Skapa affär','toast.dealCreated':'Affär skapad.',
@@ -813,11 +815,19 @@ function attentionTable(){
 }
 
 /* ---------------- pipeline ---------------- */
+let compactBoard = false;
+try{ compactBoard = localStorage.getItem('nimbus-board') === '1'; }catch(e){}
+function toggleBoard(){
+  compactBoard = !compactBoard;
+  try{ localStorage.setItem('nimbus-board', compactBoard ? '1' : '0'); }catch(e){}
+  route();
+}
 function vPipeline(){
   const total = db.deals.filter(d=>!['Won','Lost'].includes(d.stage)).reduce((s,d)=>s+d.value,0);
   head(t('nav.pipeline'), t('pipeline.sub', money(total)),
+    `<button class="sm" id="boardbtn" onclick="toggleBoard()">${t(compactBoard?'board.roomy':'board.compact')}</button>` +
     adminOnly(`<button class="primary" onclick="newDeal()">${t('btn.newDeal')}</button>`));
-  view().innerHTML = `<div class="board">${STAGES.map(s=>{
+  view().innerHTML = `<div class="board${compactBoard?' compact':''}">${STAGES.map(s=>{
     const ds = db.deals.filter(d=>d.stage===s);
     return `<div class="col" data-stage="${s}" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event,'${s}')">
       <h3><span>${t('st.'+s)}</span><span>${ds.length} · ${money(ds.reduce((a,d)=>a+d.value,0))}</span></h3>
@@ -825,7 +835,7 @@ function vPipeline(){
         <div class="t">${esc(d.title)}</div>
         <div class="muted" style="font-size:12px">${esc(person(d))} · ${esc(company(d.companyId))}</div>
         <div class="m"><b>${money(d.value)}</b><span>${fmtDate(d.close)}</span></div>
-        ${adminOnly(`<div style="margin-top:8px;display:flex;gap:6px">
+        ${adminOnly(`<div class="actions" style="margin-top:8px">
           <button class="sm" onclick="newQuote('${d.id}')">${t('btn.quote')}</button>
           <button class="sm ghost danger" onclick="delDeal('${d.id}')">${t('btn.delete')}</button>
         </div>`)}</div>`).join('')}
