@@ -23,6 +23,7 @@ en: {
   'side.demo':'Demo build — data lives in your Supabase database. No real emails, no real payments.',
   'side.reset':'Reset demo data',
   'cur.tip':'Display currency','cur.USD':'USD — US Dollar','cur.SEK':'SEK — Swedish Krona','cur.NOK':'NOK — Norwegian Krone','cur.DKK':'DKK — Danish Krone','cur.EUR':'EUR — Euro',
+  'theme.light':'Switch to light theme','theme.dark':'Switch to dark theme',
   'st.New':'New','st.Contacted':'Contacted','st.Qualified':'Qualified','st.Proposal':'Proposal',
   'st.Won':'Won','st.Lost':'Lost','st.Draft':'Draft','st.Sent':'Sent','st.Opened':'Opened',
   'st.Accepted':'Accepted','st.Paid':'Paid','st.Active':'Active','st.Rejected':'Rejected',
@@ -147,6 +148,7 @@ sv: {
   'side.demo':'Demoversion — data ligger i din Supabase-databas. Inga riktiga mejl, inga riktiga betalningar.',
   'side.reset':'Återställ demodata',
   'cur.tip':'Visningsvaluta','cur.USD':'USD — Amerikansk dollar','cur.SEK':'SEK — Svensk krona','cur.NOK':'NOK — Norsk krona','cur.DKK':'DKK — Dansk krona','cur.EUR':'EUR — Euro',
+  'theme.light':'Byt till ljust tema','theme.dark':'Byt till mörkt tema',
   'st.New':'Ny','st.Contacted':'Kontaktad','st.Qualified':'Kvalificerad','st.Proposal':'Förslag',
   'st.Won':'Vunnen','st.Lost':'Förlorad','st.Draft':'Utkast','st.Sent':'Skickad','st.Opened':'Öppnad',
   'st.Accepted':'Accepterad','st.Paid':'Betald','st.Active':'Aktiv','st.Rejected':'Avvisad',
@@ -279,6 +281,25 @@ function changeCurr(v){
   try{ localStorage.setItem('nimbus-curr', curr); }catch(e){}
   paintLang(); route(); toast(t('toast.curr', rateTxt(curr)));
 }
+/* ------------------------------ theme ------------------------------ */
+let theme = (()=>{
+  try{ const s = localStorage.getItem('nimbus-theme'); if(s==='light'||s==='dark') return s; }catch(e){}
+  return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+})();
+function applyTheme(){
+  document.documentElement.dataset.theme = theme;
+  const b = document.getElementById('themebtn');
+  if(b){
+    b.textContent = theme==='dark' ? '☀️' : '🌙';
+    const tip = t(theme==='dark' ? 'theme.light' : 'theme.dark');
+    b.title = tip; b.setAttribute('aria-label', tip);
+  }
+}
+function toggleTheme(){
+  theme = theme==='dark' ? 'light' : 'dark';
+  try{ localStorage.setItem('nimbus-theme', theme); }catch(e){}
+  applyTheme();
+}
 function paintLang(){
   document.title = t('app.title');
   document.querySelectorAll('[data-i18n]').forEach(e => { e.textContent = t(e.dataset.i18n); });
@@ -292,6 +313,7 @@ function paintLang(){
     cs.title = t('cur.tip') + ' — 1 USD = ' + rateTxt(curr);
     cs.innerHTML = Object.keys(CUR).map(c=>`<option value="${c}" ${c===curr?'selected':''}>${esc(t('cur.'+c))}</option>`).join('');
   }
+  applyTheme();
 }
 
 const STAGES = ['New','Contacted','Qualified','Proposal','Won','Lost'];
