@@ -689,7 +689,8 @@ if(sb){
    changes for rows they are allowed to see. On reconnect we reload
    everything to catch events missed while offline. */
 let rtChannel = null, rtJoined = false;
-let undoMap = {};   /* companyId -> cascade snapshot + 5s timer (row shows Ångra) */
+let undoMap = {};   /* companyId -> cascade snapshot + countdown (row shows Ångra) */
+let undoClock = null;   /* 1s interval driving the countdown and the trash move */
 let suppressLoad = false;   /* skip reconnect reloads while a cascade/trash sync is in flight */
 let restoredIds = {};   /* tbl -> Set(ids) recently restored (ignore late DELETE echoes of our own cascade) */
 function subscribeRealtime(){
@@ -1025,7 +1026,7 @@ function companiesRows(){
       <td class="num">${ds.length}</td>
       <td class="num">${money(val)}</td>
       <td style="text-align:right">${u
-        ? `<button class="sm primary" onclick="undoDeleteCompany('${c.id}')">${t('companies.undo')}</button>`
+        ? `<span class="undocount">${u.left}</span><button class="sm primary" onclick="undoDeleteCompany('${c.id}')">${t('companies.undo')}</button>`
         : adminOnly(`<button class="sm" onclick="editCompany('${c.id}')">${t('btn.edit')}</button>
           <button class="sm ghost danger" onclick="delCompany('${c.id}')">${t('btn.delete')}</button>`)}</td>
     </tr>`;
@@ -1070,15 +1071,25 @@ function delCompany(id){
   const iIds    = new Set(invoices.map(i=>i.id));
   const subs    = db.subs.filter(s=>s.companyId===id);
   const payments= db.payments.filter(p=>p.companyId===id || iIds.has(p.invoiceId));
-  /* nothing is removed yet — the row's Ta bort button turns into Ångra for 5 s;
-     only when the timer fires does the cascade happen and the company moves to the trash */
-  undoMap[id] = { company:c, deals, quotes, invoices, subs, payments, timer: setTimeout(()=>trashCompany(id), 5000) };
+  /* nothing is removed yet — the row's Ta bort button turns into Ångra with a
+     countdown for 5 s; at zero the cascade happens and the company moves to the trash */
+  undoMap[id] = { company:c, deals, quotes, invoices, subs, payments, left:5 };
+  if(!undoClock) undoClock = setInterval(tickUndo, 1000);
   route();
+}
+function tickUndo(){
+  for(const id of Object.keys(undoMap)){
+    const u = undoMap[id];
+    u.left--;
+    if(u.left <= 0) trashCompany(id);   /* deletes undoMap[id] */
+  }
+  if(Object.keys(undoMap).length) renderCompanies();
+  else { clearInterval(undoClock); undoClock = null; }
 }
 function undoDeleteCompany(id){
   const u = undoMap[id]; if(!u) return;
-  clearTimeout(u.timer);
   delete undoMap[id];
+  if(!Object.keys(undoMap).length && undoClock){ clearInterval(undoClock); undoClock = null; }
   toast(t('toast.undo')); route();
 }
 function trashCompany(id){
