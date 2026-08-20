@@ -16,7 +16,7 @@ try{ lang = localStorage.getItem(LANG_KEY) || 'sv'; }catch(e){}
 const STR = {
 en: {
   'app.title':'Nimbus CRM — Demo',
-  'nav.dashboard':'Dashboard','nav.pipeline':'Pipeline','nav.companies':'Companies',
+  'nav.dashboard':'Dashboard','nav.pipeline':'Pipeline','nav.companies':'Customer list',
   'nav.quotes':'Offers & Quotes','nav.invoices':'Invoices',
   'nav.payments':'Payments','nav.automation':'Automation log','nav.portal':'Client portal preview',
   'grp.sales':'Sales','grp.revenue':'Revenue','grp.system':'System',
@@ -45,7 +45,7 @@ en: {
   'btn.board':'Board','btn.openBoard':'Open board','btn.sendToClient':'Send to client',
   'btn.back':'← All quotes',
   'btn.billingCycle':'Run billing cycle','btn.pause':'Pause','btn.resume':'Resume','btn.recordPay':'Record payment',
-  'dash.sub':'Demo date: <b>%s</b> · %s companies · %s open deals',
+  'dash.sub':'Demo date: <b>%s</b> · %s customers · %s open deals',
   'dash.banner':'Demo mode. Data lives in your Supabase database — quotes are not emailed, invoices are not billed, and "payments" are simulated. Use <b>Run automations</b> and <b>Advance 7 days</b> to see the workflow rules fire.',
   'kpi.open':'Open pipeline','kpi.open.d':'%s deals in play',
   'kpi.won':'Won this period','kpi.won.d':'closed / accepted',
@@ -60,21 +60,22 @@ en: {
   'th.what':'What','th.record':'Record','th.amount':'Amount','th.when':'When',
   'pipeline.sub':'Drag cards between stages · %s open',
   'board.compact':'Compact','board.roomy':'Large',
-  'companies.sub':'Companies and their pipelines','companies.empty':'No companies yet.',
+  'companies.sub':'Private and company customers','companies.empty':'No customers yet.',
   'companies.undo':'Undo',
-  'nav.trash':'Trash','trash.sub':'Deleted companies — restore or delete forever.','trash.empty':'The trash is empty.',
-  'trash.restore':'Restore','trash.purge':'Delete forever','trash.restored':'Company restored.','trash.purged':'Deleted forever.','trash.at':'Deleted',
+  'nav.trash':'Trash','trash.sub':'Deleted customers — restore or delete forever.','trash.empty':'The trash is empty.',
+  'trash.restore':'Restore','trash.purge':'Delete forever','trash.restored':'Customer restored.','trash.purged':'Deleted forever.','trash.at':'Deleted',
   'field.industry':'Industry','confirm.purgeTrash':'Permanently delete "%s" and all its data? This cannot be undone.',
   'field.name':'Name',
-  'toast.companyCreated':'Company added.','toast.companyUpdated':'Company updated.','toast.companyDeleted':'Company deleted.','toast.undo':'Done — everything restored.',
+  'toast.companyCreated':'Customer added.','toast.companyUpdated':'Customer updated.','toast.companyDeleted':'Customer deleted.','toast.undo':'Done — everything restored.',
   'list.search':'Search…','list.all':'All statuses','list.none':'No matches.',
-  'btn.newCompany':'New company','btn.edit':'Edit','btn.print':'Print',
+  'btn.newCompany':'New company customer','btn.newPerson':'New private customer','btn.edit':'Edit','btn.print':'Print',
   'th.industry':'Industry','th.deals':'Deals','th.value':'Value','th.name':'Name',
   'doc.invoice':'Invoice %s','doc.due':'Due %s',
   'confirm.delDeal':'Delete deal "%s"? (demo data only)',
   'field.dealName':'Deal name','field.value':'Value','field.stage':'Stage',
   'field.close':'Expected close','btn.createDeal':'Create deal','toast.dealCreated':'Deal created.',
-  'field.company':'Company','field.contactPerson':'Contact person','field.contactEmail':'Contact email',
+  'field.company':'Customer','field.contactPerson':'Contact person','field.contactEmail':'Contact email',
+  'customers.company':'Companies','customers.private':'Private customers','field.email':'Email','field.phone':'Phone',
   'field.valid':'Valid until','field.total':'Total',
   'opt.none':'— none —','alert.client':'Enter a contact person name.',
   'quotes.sub':'Draft → Sent → Accepted. Accepting a quote can generate invoices automatically.',
@@ -161,7 +162,7 @@ en: {
 },
 sv: {
   'app.title':'Nimbus CRM – Demo',
-  'nav.dashboard':'Översikt','nav.pipeline':'Pipeline','nav.companies':'Företag',
+  'nav.dashboard':'Översikt','nav.pipeline':'Pipeline','nav.companies':'Kundlista',
   'nav.quotes':'Offerter','nav.invoices':'Fakturor',
   'nav.payments':'Betalningar','nav.automation':'Automatiseringslogg','nav.portal':'Kundportal',
   'grp.sales':'Försäljning','grp.revenue':'Intäkter','grp.system':'System',
@@ -190,7 +191,7 @@ sv: {
   'btn.board':'Tavla','btn.openBoard':'Öppna tavla','btn.sendToClient':'Skicka till kund',
   'btn.back':'← Alla offerter',
   'btn.billingCycle':'Kör faktureringscykel','btn.pause':'Pausa','btn.resume':'Återuppta','btn.recordPay':'Registrera betalning',
-  'dash.sub':'Demodatum: <b>%s</b> · %s företag · %s öppna affärer',
+  'dash.sub':'Demodatum: <b>%s</b> · %s kunder · %s öppna affärer',
   'dash.banner':'Demoläge. Data ligger i din Supabase-databas — offerter mejlas inte, fakturor skickas inte och "betalningar" är simulerade. Använd <b>Kör automatiseringar</b> och <b>Flytta fram 7 dagar</b> för att se reglerna utlösas.',
   'kpi.open':'Öppen pipeline','kpi.open.d':'%s affärer på gång',
   'kpi.won':'Vunnet denna period','kpi.won.d':'stängda / accepterade',
@@ -205,21 +206,22 @@ sv: {
   'th.what':'Vad','th.record':'Post','th.amount':'Belopp','th.when':'När',
   'pipeline.sub':'Dra kort mellan stadier · %s öppna',
   'board.compact':'Kompakt','board.roomy':'Stor',
-  'companies.sub':'Företag och deras pipelines','companies.empty':'Inga företag ännu.',
+  'companies.sub':'Privat- och företagskunder','companies.empty':'Inga kunder ännu.',
   'companies.undo':'Ångra',
-  'nav.trash':'Papperskorg','trash.sub':'Borttagna företag — återställ eller radera för alltid.','trash.empty':'Papperskorgen är tom.',
-  'trash.restore':'Återställ','trash.purge':'Radera för alltid','trash.restored':'Företaget återställdes.','trash.purged':'Raderat för alltid.','trash.at':'Raderad',
+  'nav.trash':'Papperskorg','trash.sub':'Borttagna kunder — återställ eller radera för alltid.','trash.empty':'Papperskorgen är tom.',
+  'trash.restore':'Återställ','trash.purge':'Radera för alltid','trash.restored':'Kunden återställdes.','trash.purged':'Raderat för alltid.','trash.at':'Raderad',
   'field.industry':'Bransch','confirm.purgeTrash':'Radera "%s" och all dess data för alltid? Detta kan inte ångras.',
   'field.name':'Namn',
-  'toast.companyCreated':'Företag tillagt.','toast.companyUpdated':'Företag uppdaterat.','toast.companyDeleted':'Företag borttaget.','toast.undo':'Klart — allt återställt.',
+  'toast.companyCreated':'Kund tillagd.','toast.companyUpdated':'Kund uppdaterad.','toast.companyDeleted':'Kund borttagen.','toast.undo':'Klart — allt återställt.',
   'list.search':'Sök…','list.all':'Alla statusar','list.none':'Inga träffar.',
-  'btn.newCompany':'Nytt företag','btn.edit':'Ändra','btn.print':'Skriv ut',
+  'btn.newCompany':'Ny företagskund','btn.newPerson':'Ny privatkund','btn.edit':'Ändra','btn.print':'Skriv ut',
   'th.industry':'Bransch','th.deals':'Affärer','th.value':'Värde','th.name':'Namn',
   'doc.invoice':'Faktura %s','doc.due':'Förfaller %s',
   'confirm.delDeal':'Ta bort affären "%s"? (endast demodata)',
   'field.dealName':'Affärsnamn','field.value':'Värde','field.stage':'Stadie',
   'field.close':'Förväntad stängning','btn.createDeal':'Skapa affär','toast.dealCreated':'Affär skapad.',
-  'field.company':'Företag','field.contactPerson':'Kontaktperson','field.contactEmail':'E-post',
+  'field.company':'Kund','field.contactPerson':'Kontaktperson','field.contactEmail':'E-post',
+  'customers.company':'Företagskunder','customers.private':'Privatkunder','field.email':'E-post','field.phone':'Telefon',
   'field.valid':'Giltig till','field.total':'Totalt',
   'opt.none':'— ingen —','alert.client':'Ange en kontaktperson.',
   'quotes.sub':'Utkast → Skickad → Accepterad. Att acceptera en offert kan generera fakturor automatiskt.',
@@ -406,6 +408,8 @@ const CUR = {
 let curr = 'SEK';
 try{ curr = localStorage.getItem('nimbus-curr') || 'SEK'; }catch(e){}
 if(!CUR[curr]) curr = 'SEK';
+let custMode = 'company';   /* customer list mode: 'company' | 'person' */
+try{ const m = localStorage.getItem('nimbus-cust'); if(m==='company'||m==='person') custMode = m; }catch(e){}
 /* exchange rates — live fetch (open.er-api.com, no key) with a localStorage cache.
    All db values stay in USD; money() converts at render time with the current rate.
    The fallback table keeps the demo working fully offline; it is replaced on the
@@ -764,6 +768,7 @@ function sortVal(tbl, row, key){
   if(tbl==='companies'){
     if(key==='deals') return db.deals.filter(d=>d.companyId===row.id).length;
     if(key==='value') return db.deals.filter(d=>d.companyId===row.id && d.stage!=='Lost').reduce((s,d)=>s+d.value,0);
+    if(key==='industry') return (isPersonCust(row) ? (row.email||'') : (row.industry||'')).toLowerCase();
     return (row[key] ?? '');
   }
   return (row[key] ?? '');
@@ -979,8 +984,7 @@ function newDeal(companyId){
       <div class="field"><label>${t('field.value')}</label><input name="value" type="number" min="0" step="100" value="10000" required></div>
     </div>
     <div class="row">
-      <div class="field"><label>${t('field.company')}</label><select name="companyId">${db.companies.map(c=>
-        `<option value="${c.id}" ${c.id===companyId?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
+      <div class="field"><label>${t('field.company')}</label><select name="companyId">${customerOptions(companyId)}</select></div>
       <div class="field"><label>${t('field.stage')}</label><select name="stage">${STAGES.map(s=>`<option value="${s}">${t('st.'+s)}</option>`).join('')}</select></div>
     </div>
     <div class="row">
@@ -998,31 +1002,52 @@ function newDeal(companyId){
     }});
 }
 
-/* ---------------- companies ---------------- */
+/* ---------------- companies / customer list ---------------- */
+const isPersonCust = c => c.type === 'person';
+const isCustMode = c => custMode === 'person' ? isPersonCust(c) : !isPersonCust(c);
+function customerOptions(sel){
+  const opts = (list,label) => list.length ? `<optgroup label="${label}">${list.map(c=>
+    `<option value="${c.id}" ${c.id===sel?'selected':''}>${esc(c.name)}</option>`).join('')}</optgroup>` : '';
+  return opts(db.companies.filter(c=>!isPersonCust(c)), t('customers.company'))
+       + opts(db.companies.filter(isPersonCust), t('customers.private'));
+}
 function vCompanies(){
   head(t('nav.companies'), t('companies.sub'),
-    adminOnly(`<button class="primary" onclick="newCompany()">${t('btn.newCompany')}</button>`));
-  view().innerHTML = `<div class="card"><table>
-    <thead id="coh">${companiesThead()}</thead>
-    <tbody id="cob">${companiesRows()}</tbody></table>${db.companies.length?'':'<div class="empty">'+t('companies.empty')+'</div>'}</div>`;
+    adminOnly(`<button class="primary" onclick="newCustomer()">${t(custMode==='person'?'btn.newPerson':'btn.newCompany')}</button>`));
+  const rows = customerRows();
+  view().innerHTML = `
+    <div class="listbar">
+      <button class="sm ${custMode==='company'?'primary':''}" onclick="setCustMode('company')">${t('customers.company')}</button>
+      <button class="sm ${custMode==='person'?'primary':''}" onclick="setCustMode('person')">${t('customers.private')}</button>
+    </div>
+    <div class="card"><table>
+      <thead id="coh">${customerThead()}</thead>
+      <tbody id="cob">${rows}</tbody></table>${db.companies.filter(isCustMode).length?'':'<div class="empty">'+t('companies.empty')+'</div>'}</div>`;
 }
-function companiesThead(){
+function setCustMode(m){
+  if(custMode === m) return;
+  custMode = m;
+  try{ localStorage.setItem('nimbus-cust', custMode); }catch(e){}
+  route();
+}
+function customerThead(){
   return `<tr>
     ${sortHead('companies','name',t('th.name'))}
-    ${sortHead('companies','industry',t('th.industry'))}
+    ${sortHead('companies','industry', custMode==='person' ? t('field.email') : t('th.industry'))}
     ${sortHead('companies','deals',t('th.deals'),'num')}
     ${sortHead('companies','value',t('th.value'),'num')}
     <th></th>
   </tr>`;
 }
-function companiesRows(){
-  return sortRows('companies', db.companies).map(c=>{
+function customerRows(){
+  return sortRows('companies', db.companies.filter(isCustMode)).map(c=>{
     const ds = db.deals.filter(d=>d.companyId===c.id);
     const val = ds.filter(d=>!['Lost'].includes(d.stage)).reduce((s,d)=>s+d.value,0);
     const u = undoMap[c.id];
+    const meta = isPersonCust(c) ? esc(c.email||'—') : esc(c.industry||'—');
     return `<tr class="${u?'undoing':''}">
       <td><b>${esc(c.name)}</b></td>
-      <td>${esc(c.industry||'—')}</td>
+      <td>${meta}</td>
       <td class="num">${ds.length}</td>
       <td class="num">${money(val)}</td>
       <td style="text-align:right">${u
@@ -1032,9 +1057,17 @@ function companiesRows(){
     </tr>`;
   }).join('');
 }
-function renderCompanies(){ const t=document.getElementById('cob'); if(t) t.innerHTML = companiesRows(); }
-function newCompany(){
-  modal({title:t('btn.newCompany'), body:`
+function renderCompanies(){ const t=document.getElementById('cob'); if(t) t.innerHTML = customerRows(); }
+function newCustomer(){
+  const isPerson = custMode === 'person';
+  modal({title:t(isPerson?'btn.newPerson':'btn.newCompany'), body: isPerson ? `
+    <div class="row">
+      <div class="field"><label>${t('field.name')}</label><input name="name" required placeholder="Anna Andersson"></div>
+      <div class="field"><label>${t('field.email')}</label><input name="email" type="email" placeholder="anna@example.com"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>${t('field.phone')}</label><input name="phone" placeholder="070-123 45 67"></div>
+    </div>` : `
     <div class="row">
       <div class="field"><label>${t('field.name')}</label><input name="name" required placeholder="ACME AB"></div>
       <div class="field"><label>${t('field.industry')}</label><input name="industry" placeholder="Manufacturing"></div>
@@ -1042,13 +1075,22 @@ function newCompany(){
     ok:t('btn.create'),
     onSubmit(d){
       if(!d.name) return false;
-      db.companies.unshift({id:uid('co'),name:d.name,industry:d.industry||null});
+      db.companies.unshift({id:uid('co'), name:d.name, industry:isPerson?null:(d.industry||null),
+        email:isPerson?(d.email||''):null, phone:isPerson?(d.phone||''):null, type:isPerson?'person':'company'});
       toast(t('toast.companyCreated'));
     }});
 }
 function editCompany(id){
   const c = byId(db.companies,id); if(!c) return;
-  modal({title:t('btn.edit'), body:`
+  const isPerson = isPersonCust(c);
+  modal({title:t('btn.edit'), body: isPerson ? `
+    <div class="row">
+      <div class="field"><label>${t('field.name')}</label><input name="name" value="${esc(c.name)}" required></div>
+      <div class="field"><label>${t('field.email')}</label><input name="email" type="email" value="${esc(c.email||'')}"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>${t('field.phone')}</label><input name="phone" value="${esc(c.phone||'')}"></div>
+    </div>` : `
     <div class="row">
       <div class="field"><label>${t('field.name')}</label><input name="name" value="${esc(c.name)}" required></div>
       <div class="field"><label>${t('field.industry')}</label><input name="industry" value="${esc(c.industry||'')}"></div>
@@ -1056,7 +1098,9 @@ function editCompany(id){
     ok:t('btn.save'),
     onSubmit(d){
       if(!d.name) return false;
-      c.name = d.name; c.industry = d.industry||null;
+      c.name = d.name;
+      if(isPerson){ c.email = d.email||''; c.phone = d.phone||''; }
+      else c.industry = d.industry||null;
       toast(t('toast.companyUpdated'));
     }});
 }
@@ -1214,8 +1258,7 @@ function newQuote(dealId){
   const dl = dealId && byId(db.deals,dealId);
   modal({title:t('newQuote.title'), wide:true, body:`
     <div class="row">
-      <div class="field"><label>${t('field.company')}</label><select name="companyId">${db.companies.map(c=>
-        `<option value="${c.id}" ${c.id===(dl?dl.companyId:undefined)?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
+      <div class="field"><label>${t('field.company')}</label><select name="companyId">${customerOptions(dl?dl.companyId:undefined)}</select></div>
       <div class="field"><label>${t('field.contactPerson')} *</label><input name="contactName" value="${esc(dl?dl.contactName:'')}" required placeholder="Jane Doe"></div>
       <div class="field"><label>${t('field.contactEmail')}</label><input name="contactEmail" type="email" value="${esc(dl?dl.contactEmail:'')}" placeholder="jane@example.com"></div>
     </div>
@@ -1550,15 +1593,14 @@ function vPortal(id){
   const c = id ? byId(db.companies,id) : db.companies[0];
   if(!c) return notFound();
   head(t('nav.portal'), t('portal.sub', esc(c.name)),
-    `<select onchange="go('#/portal/'+this.value)" style="width:auto">${db.companies.map(x=>
-      `<option value="${x.id}" ${x.id===c.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`);
+    `<select onchange="go('#/portal/'+this.value)" style="width:auto">${customerOptions(c.id)}</select>`);
   const qs = db.quotes.filter(q=>q.companyId===c.id && q.status!=='Draft');
   const is = db.invoices.filter(i=>i.companyId===c.id && i.status!=='Draft');
   view().innerHTML = `
   <div class="banner">${t('portal.banner')}</div>
   <div class="card" style="margin-bottom:16px"><div class="bd" style="display:flex;align-items:center;gap:14px">
     <span class="avatar" style="width:44px;height:44px;flex:0 0 44px;font-size:15px">${init(c.name)}</span>
-    <div><b style="font-size:16px">${esc(c.name)}</b><div class="muted">${esc(c.industry||'')}</div></div>
+    <div><b style="font-size:16px">${esc(c.name)}</b><div class="muted">${esc(isPersonCust(c) ? (c.email||'') : (c.industry||''))}</div></div>
   </div></div>
   <div class="card" style="margin-bottom:16px"><div class="hd"><h2>${t('portal.offers')}</h2></div>
     ${qs.length?`<table><thead><tr><th>${t('th.offer')}</th><th>${t('th.status')}</th><th>${t('th.valid')}</th><th class="num">${t('th.total')}</th><th></th></tr></thead>
