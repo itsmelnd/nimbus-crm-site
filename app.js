@@ -643,18 +643,20 @@ const tag = s => `<span class="tag ${tagCls(s)}">${esc(t('st.'+s))}</span>`;
 /* ------------------------------ modal ------------------------------ */
 let onOk = null;
 function modal({title, body, ok=t('btn.save'), wide=false, okClass='primary', onSubmit}){
-  close();
+  closeModal();
   onOk = onSubmit;
   const v=document.createElement('div'); v.className='veil'; v.id='veil';
   v.innerHTML = `<div class="modal ${wide?'wide':''}" role="dialog" aria-modal="true">
     <div class="hd"><h2>${esc(title)}</h2></div>
     <form class="bd" id="mform">${body}</form>
     <div class="ft">
-      <button type="button" onclick="close()">${t('btn.cancel')}</button>
+      <button type="button" id="mcan">${t('btn.cancel')}</button>
       ${ok?`<button type="button" class="${okClass}" id="mok">${esc(ok)}</button>`:''}
     </div></div>`;
-  v.addEventListener('mousedown', e => { if(e.target===v) close(); });
+  v.addEventListener('mousedown', e => { if(e.target===v) closeModal(); });
   document.body.appendChild(v);
+  const canb = document.getElementById('mcan');
+  if(canb) canb.onclick = closeModal;
   const okb = document.getElementById('mok');
   if(okb) okb.onclick = submit;
   document.getElementById('mform').addEventListener('submit', e=>{e.preventDefault();submit();});
@@ -666,10 +668,12 @@ async function submit(){
     if(k in data){ data[k] = [].concat(data[k], val); } else data[k]=val;
   }
   if(onOk){ const r = await onOk(data); if(r === false) return; }
-  close(); save(); route();
+  closeModal(); save(); route();
 }
-function close(){ const v=document.getElementById('veil'); if(v) v.remove(); onOk=null; }
-document.addEventListener('keydown', e=>{ if(e.key==='Escape') close(); });
+/* closeModal: NOT named "close" — the native window.close() would shadow it in
+   inline handlers and cancel would appear broken. */
+function closeModal(){ const v=document.getElementById('veil'); if(v) v.remove(); onOk=null; }
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
 
 /* ====================================================================
    VIEWS
