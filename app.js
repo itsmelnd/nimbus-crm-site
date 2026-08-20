@@ -18,7 +18,7 @@ en: {
   'app.title':'Nimbus CRM — Demo',
   'nav.dashboard':'Dashboard','nav.pipeline':'Pipeline','nav.companies':'Customer list',
   'nav.quotes':'Offers & Quotes','nav.invoices':'Invoices',
-  'nav.payments':'Payments','nav.automation':'Automation log','nav.portal':'Client portal preview',
+  'nav.payments':'Payments','nav.automation':'Automation log','nav.portal':'Client portal preview','nav.email':'Email',
   'grp.sales':'Sales','grp.revenue':'Revenue','grp.system':'System',
   'side.demo':'Demo build — data lives in your Supabase database. No real emails, no real payments.',
   'side.reset':'Reset demo data',
@@ -77,6 +77,15 @@ en: {
   'field.company':'Customer','field.contactPerson':'Contact person','field.contactEmail':'Contact email',
   'customers.company':'Companies','customers.private':'Private customers','field.email':'Email','field.phone':'Phone',
   'field.valid':'Valid until','field.total':'Total',
+  'email.sub':'Inbox and sending via your own email server (IMAP/SMTP).',
+  'email.serverUrl':'Server URL','email.refresh':'Refresh','email.send':'Send email','email.inbox':'Inbox',
+  'email.notConnected':'The email server is not running. Start it on your computer (<b>start-email-server.bat</b>) and open <b>http://127.0.0.1:8787/setup</b> to connect your account.',
+  'email.notConfigured':'No account connected yet — open <b>http://127.0.0.1:8787/setup</b> in your browser and enter your IMAP/SMTP details.',
+  'email.empty':'Inbox is empty.',
+  'email.loadFailed':'Could not load email: %s',
+  'email.to':'To','email.subject':'Subject','email.body':'Message',
+  'email.sent':'Email sent!','email.sendFailed':'Could not send: %s','email.sending':'Sending…',
+  'email.quoteSubject':'Quote %s from Nimbus CRM',
   'opt.none':'— none —','alert.client':'Enter a contact person name.',
   'quotes.sub':'Draft → Sent → Accepted. Accepting a quote can generate invoices automatically.',
   'th.number':'Number','th.client':'Client','th.status':'Status','th.created':'Created','th.valid':'Valid until','th.method':'Method',
@@ -164,7 +173,7 @@ sv: {
   'app.title':'Nimbus CRM – Demo',
   'nav.dashboard':'Översikt','nav.pipeline':'Pipeline','nav.companies':'Kundlista',
   'nav.quotes':'Offerter','nav.invoices':'Fakturor',
-  'nav.payments':'Betalningar','nav.automation':'Automatiseringslogg','nav.portal':'Kundportal',
+  'nav.payments':'Betalningar','nav.automation':'Automatiseringslogg','nav.portal':'Kundportal','nav.email':'E-post',
   'grp.sales':'Försäljning','grp.revenue':'Intäkter','grp.system':'System',
   'side.demo':'Demoversion — data ligger i din Supabase-databas. Inga riktiga mejl, inga riktiga betalningar.',
   'side.reset':'Återställ demodata',
@@ -223,6 +232,15 @@ sv: {
   'field.company':'Kund','field.contactPerson':'Kontaktperson','field.contactEmail':'E-post',
   'customers.company':'Företagskunder','customers.private':'Privatkunder','field.email':'E-post','field.phone':'Telefon',
   'field.valid':'Giltig till','field.total':'Totalt',
+  'email.sub':'Inkorg och utskick via din egen e-postserver (IMAP/SMTP).',
+  'email.serverUrl':'Serveradress','email.refresh':'Uppdatera','email.send':'Skicka e-post','email.inbox':'Inkorg',
+  'email.notConnected':'E-postservern är inte igång. Starta den på datorn (<b>start-email-server.bat</b>) och öppna <b>http://127.0.0.1:8787/setup</b> för att koppla ditt konto.',
+  'email.notConfigured':'Inget konto kopplat ännu — öppna <b>http://127.0.0.1:8787/setup</b> i webbläsaren och ange dina IMAP/SMTP-uppgifter.',
+  'email.empty':'Inkorgen är tom.',
+  'email.loadFailed':'Kunde inte hämta e-post: %s',
+  'email.to':'Till','email.subject':'Ämne','email.body':'Meddelande',
+  'email.sent':'E-post skickad!','email.sendFailed':'Kunde inte skicka: %s','email.sending':'Skickar…',
+  'email.quoteSubject':'Offert %s från Nimbus CRM',
   'opt.none':'— ingen —','alert.client':'Ange en kontaktperson.',
   'quotes.sub':'Utkast → Skickad → Accepterad. Att acceptera en offert kan generera fakturor automatiskt.',
   'th.number':'Nummer','th.client':'Kund','th.status':'Status','th.created':'Skapad','th.valid':'Giltig till','th.method':'Metod',
@@ -1203,6 +1221,98 @@ function purgeTrash(id){
   toast(t('trash.purged')); save(); route();
 }
 
+/* ---------------- email (local IMAP/SMTP bridge) ---------------- */
+let emailUrl = 'http://127.0.0.1:8787';
+try{ emailUrl = localStorage.getItem('nimbus-email-url') || emailUrl; }catch(e){}
+
+function vEmail(){
+  head(t('nav.email'), t('email.sub'));
+  view().innerHTML = `<div class="card" id="emailbox"></div>`;
+  emailLoad();
+}
+async function emailLoad(){
+  const box = document.getElementById('emailbox'); if(!box) return;
+  const inp = document.getElementById('email-server-url');
+  if(inp){ emailUrl = inp.value.trim() || emailUrl; try{ localStorage.setItem('nimbus-email-url', emailUrl); }catch(e){} }
+  box.innerHTML = `<div class="listbar">
+    <input id="email-server-url" value="${esc(emailUrl)}" placeholder="${t('email.serverUrl')}" style="max-width:280px">
+    <button class="sm primary" onclick="emailLoad()">${t('email.refresh')}</button>
+    <button class="sm" onclick="emailSendModal()">${t('email.send')}</button></div>`;
+  let h = null;
+  try{ h = await (await fetch(emailUrl + '/api/health')).json(); }catch(e){}
+  if(!h || !h.ok){
+    box.insertAdjacentHTML('beforeend', `<div class="empty">${t('email.notConnected')}</div>`);
+    return;
+  }
+  if(!h.configured){
+    box.insertAdjacentHTML('beforeend', `<div class="empty">${t('email.notConfigured')}</div>`);
+    return;
+  }
+  let list = null;
+  try{ const r = await (await fetch(emailUrl + '/api/emails?limit=20')).json(); list = r.emails || []; }
+  catch(e){ box.insertAdjacentHTML('beforeend', `<div class="empty">${t('email.loadFailed', e.message)}</div>`); return; }
+  box.insertAdjacentHTML('beforeend', `<h3 style="margin:14px 0 8px">${t('email.inbox')}</h3>` +
+    (list.length ? `<table><tbody>${list.map(m=>`<tr class="${m.seen?'':'unseen'}" style="cursor:pointer" onclick="emailOpen(${m.uid})">
+      <td><b>${esc(m.from)}</b></td><td>${esc(m.subject)}</td><td class="muted">${esc((m.date||'').slice(0,10))}</td></tr>`).join('')}</tbody></table>`
+    : `<div class="empty">${t('email.empty')}</div>`));
+}
+async function emailOpen(uid){
+  let r = null;
+  try{ r = await (await fetch(emailUrl + '/api/emails/' + uid)).json(); }catch(e){ toast(t('email.loadFailed', e.message)); return; }
+  if(!r.ok){ toast(t('email.loadFailed', r.error || '')); return; }
+  const m = r.message;
+  modal({title: m.subject || '(no subject)', wide:true, body:`
+    <div class="muted" style="margin-bottom:10px">${esc(m.from)} · ${esc((m.date||'').slice(0,10))}</div>
+    ${m.text ? `<pre style="white-space:pre-wrap;font:inherit;margin:0">${esc(m.text)}</pre>` : `<div>${m.html||''}</div>`}`});
+}
+function emailSendModal(to, subject, html, onSent){
+  modal({title:t('email.send'), wide:true, body:`
+    <div class="row">
+      <div class="field"><label>${t('email.to')}</label><input name="to" type="email" value="${esc(to||'')}" required></div>
+      <div class="field"><label>${t('email.subject')}</label><input name="subject" value="${esc(subject||'')}" required></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>${t('email.body')}</label><textarea name="body" rows="12" style="width:100%">${esc(html||'')}</textarea></div>
+    </div>`,
+    ok:t('email.send'),
+    onSubmit: async (d) => {
+      if(!d.to || !d.subject) return false;
+      const btn = document.getElementById('mok');
+      if(btn){ btn.disabled = true; btn.textContent = t('email.sending'); }
+      try{
+        const r = await (await fetch(emailUrl + '/api/send', {method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({to:d.to, subject:d.subject, html:d.body})})).json();
+        if(!r.ok) throw new Error(r.error || 'send failed');
+        toast(t('email.sent'));
+        if(onSent) onSent();
+        return true;
+      }catch(e){
+        toast(t('email.sendFailed', e.message));
+        if(btn){ btn.disabled = false; btn.textContent = t('email.send'); }
+        return false;
+      }
+    }});
+}
+function emailQuote(id){
+  const q = byId(db.quotes,id); if(!q) return;
+  const rows = q.items.map(i=>`<tr><td>${esc(i.desc)}</td><td style="text-align:right">${i.qty} × ${money(i.price)}</td>
+    <td style="text-align:right">${money(i.qty*i.price)}</td></tr>`).join('');
+  const html = `<div style="font-family:system-ui,sans-serif;max-width:600px">
+    <h2>${esc(t('doc.offer', q.no))}</h2>
+    <p>Hej ${esc(person(q))},</p>
+    <p>Här är offert <b>${esc(q.no)}</b> från ${esc(company(q.companyId))}.</p>
+    <table style="width:100%;border-collapse:collapse">${rows}</table>
+    <p><b>Totalt: ${money(quoteTotal(q))}</b> (moms ${q.tax}%)</p>
+    <p>Giltig till ${fmtDate(q.valid)}.</p>
+  </div>`;
+  emailSendModal(q.contactEmail || '', t('email.quoteSubject', q.no), html, () => {
+    q.status = 'Sent';
+    logIt('quote','log.quoteSent', q.no, person(q));
+    logIt('auto','log.followup', q.no, fmtDate(days(today(),3)));
+    save(); route();
+  });
+}
+
 /* ---------------- quotes ---------------- */
 function vQuotes(){
   head(t('nav.quotes'), t('quotes.sub'),
@@ -1299,6 +1409,7 @@ function vQuote(id){
   head(t('quote.head', q.no), `${esc(person(q))} · ${esc(company(q.companyId))} · ${tag(q.status)}`,
     adminOnly(
       (q.status==='Draft'?`<button class="primary" onclick="sendQuote('${q.id}')">${t('btn.sendToClient')}</button>`:'') +
+      `<button class="sm" onclick="emailQuote('${q.id}')">📧 ${t('email.send')}</button>` +
       (q.status==='Sent'?`<button class="primary" onclick="acceptQuote('${q.id}')">${t('btn.markAccept')}</button>
         <button onclick="rejectQuote('${q.id}')">${t('btn.markReject')}</button>`:'') +
       (q.status==='Accepted'?`<button class="primary" onclick="makeInvoices('${q.id}')">${t('btn.genInv')}</button>`:'')
@@ -1775,6 +1886,7 @@ const ROUTES = [
   [/^#\/users$/, vUsers],
   [/^#\/portal\/?(.*)$/, vPortal],
   [/^#\/trash$/, vTrash],
+  [/^#\/email$/, vEmail],
 ];
 function route(){
   const h = location.hash || '#/dashboard';

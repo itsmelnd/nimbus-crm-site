@@ -192,6 +192,7 @@
   .toast div{font-size:13px;animation:pop .18s ease}
   .undoing td{opacity:.5;transition:opacity .3s}
   .undocount{display:inline-block;min-width:20px;text-align:center;font-weight:700;opacity:.75;font-variant-numeric:tabular-nums;margin-right:2px}
+  .unseen td{font-weight:700}
   @keyframes pop{from{transform:translateY(6px);opacity:0}}
 
   .banner{background:var(--banner-bg);border:1px solid var(--banner-line);color:var(--banner-ink);border-radius:9px;padding:9px 13px;
@@ -247,6 +248,7 @@
   </div>
   <button class="grp" data-grp="system" onclick="toggleGrp('system')"><span data-i18n="grp.system">System</span><i class="chev">▾</i></button>
   <div class="grp-items" id="grp-system">
+    <a href="#/email"><span data-i18n="nav.email">Email</span></a>
     <a href="#/automation"><span data-i18n="nav.automation">Automation log</span></a>
     <a href="#/profile"><span data-i18n="nav.profile">Profile</span></a>
     <a href="#/users" id="nav-users" style="display:none"><span data-i18n="nav.users">Users</span></a>
@@ -289,8 +291,8 @@
   </div>
 </div>
 
-<script src="supabase-config.js?v=31"></script>
-<script src="supabase-js.js?v=31"></script>
-<script src="app.js?v=31"></script>
+<script src="supabase-config.js?v=32"></script>
+<script src="supabase-js.js?v=32"></script>
+<script src="app.js?v=32"></script>
 </body>
 </html>
