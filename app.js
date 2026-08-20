@@ -17,7 +17,7 @@ const STR = {
 en: {
   'app.title':'Nimbus CRM — Demo',
   'nav.dashboard':'Dashboard','nav.pipeline':'Pipeline','nav.contacts':'Contacts',
-  'nav.quotes':'Offers & Quotes','nav.invoices':'Invoices','nav.subs':'Subscriptions',
+  'nav.quotes':'Offers & Quotes','nav.invoices':'Invoices',
   'nav.payments':'Payments','nav.automation':'Automation log','nav.portal':'Client portal preview',
   'grp.sales':'Sales','grp.revenue':'Revenue','grp.system':'System',
   'side.demo':'Demo build — data lives in your Supabase database. No real emails, no real payments.',
@@ -97,9 +97,6 @@ en: {
   'method.net30':'Invoice/Net 30 (demo)','field.date':'Date','alert.amount':'Enter an amount greater than zero.',
   'payments.sub':'%s simulated transaction(s) · %s collected',
   'th.date':'Date','th.invoice':'Invoice','th.ref':'Reference','payments.empty':'No payments recorded.',
-  'subs.sub':'Recurring revenue — the path to retainers and phased billing later',
-  'th.plan':'Plan','th.cycle':'Cycle','th.next':'Next invoice','subs.since':'since %s',
-  'subs.empty':'No subscriptions. Accept a quote and pick the recurring plan.',
   'sub.retainerName':'retainer',
   'auto.sub':'Every rule that fired in this demo session','auto.activity':'Activity','auto.rules':'Rules in this demo',
   'auto.r1':'Quote sent → follow-up scheduled in 3 days',
@@ -154,7 +151,7 @@ en: {
 sv: {
   'app.title':'Nimbus CRM – Demo',
   'nav.dashboard':'Översikt','nav.pipeline':'Pipeline','nav.contacts':'Kontakter',
-  'nav.quotes':'Offerter','nav.invoices':'Fakturor','nav.subs':'Prenumerationer',
+  'nav.quotes':'Offerter','nav.invoices':'Fakturor',
   'nav.payments':'Betalningar','nav.automation':'Automatiseringslogg','nav.portal':'Kundportal',
   'grp.sales':'Försäljning','grp.revenue':'Intäkter','grp.system':'System',
   'side.demo':'Demoversion — data ligger i din Supabase-databas. Inga riktiga mejl, inga riktiga betalningar.',
@@ -234,9 +231,6 @@ sv: {
   'method.net30':'Faktura/Netto 30 (demo)','field.date':'Datum','alert.amount':'Ange ett belopp större än noll.',
   'payments.sub':'%s simulerade transaktioner · %s insamlat',
   'th.date':'Datum','th.invoice':'Faktura','th.ref':'Referens','payments.empty':'Inga betalningar registrerade.',
-  'subs.sub':'Återkommande intäkter — vägen till retainer-avtal och stegvis fakturering senare',
-  'th.plan':'Plan','th.cycle':'Cykel','th.next':'Nästa faktura','subs.since':'sedan %s',
-  'subs.empty':'Inga prenumerationer. Acceptera en offert och välj den återkommande planen.',
   'sub.retainerName':'retaineravtal',
   'auto.sub':'Varje regel som utlösts i denna demosession','auto.activity':'Aktivitet','auto.rules':'Regler i denna demo',
   'auto.r1':'Offert skickad → uppföljning schemalagd om 3 dagar',
@@ -1189,26 +1183,6 @@ function vPayments(){
         <td class="mono muted">${esc(p.ref)}</td><td class="num">${money(p.amount)}</td></tr>`;
     }).join('')}</tbody></table>${db.payments.length?'':'<div class="empty">'+t('payments.empty')+'</div>'}</div>`;
 }
-function vSubs(){
-  head(t('nav.subs'), t('subs.sub'),
-    adminOnly(`<button onclick="runAutomations()">${t('btn.billingCycle')}</button>`));
-  view().innerHTML = `<div class="card"><table>
-    <thead><tr><th>${t('th.plan')}</th><th>${t('th.client')}</th><th>${t('th.status')}</th><th>${t('th.cycle')}</th><th>${t('th.next')}</th><th class="num">${t('th.amount')}</th><th></th></tr></thead>
-    <tbody>${db.subs.map(s=>`<tr>
-      <td>${esc(s.name)}<div class="muted" style="font-size:12px">${t('subs.since', fmtDate(s.started))}</div></td>
-      <td>${esc(contact(s.contactId).name)}</td><td>${tag(s.status)}</td><td>${t('cycle.'+s.cycle.toLowerCase())}</td>
-      <td class="muted">${fmtDate(s.next)}</td><td class="num">${money(s.amount)}</td>
-      <td style="text-align:right">${adminOnly(s.status==='Active'
-        ? `<button class="sm" onclick="pauseSub('${s.id}')">${t('btn.pause')}</button>`
-        : `<button class="sm" onclick="pauseSub('${s.id}')">${t('btn.resume')}</button>`)}</td></tr>`).join('')}
-    </tbody></table>${db.subs.length?'':'<div class="empty">'+t('subs.empty')+'</div>'}</div>`;
-}
-function pauseSub(id){
-  const s=byId(db.subs,id); if(!s) return;
-  s.status = s.status==='Active' ? 'Cancelled' : 'Active';
-  logIt('sub', s.status==='Active' ? 'log.subResumed' : 'log.subPaused', s.name); save(); route();
-}
-
 /* ---------------- automation ---------------- */
 function vAutomation(){
   head(t('nav.automation'), t('auto.sub'),
@@ -1389,7 +1363,6 @@ const ROUTES = [
   [/^#\/quotes$/, vQuotes],
   [/^#\/quote\/(.+)$/, vQuote],
   [/^#\/invoices$/, vInvoices],
-  [/^#\/subscriptions$/, vSubs],
   [/^#\/payments$/, vPayments],
   [/^#\/automation$/, vAutomation],
   [/^#\/users$/, vUsers],
@@ -1405,7 +1378,7 @@ function route(){
 function paintCounts(){
   const c = {deals:db.deals.filter(d=>!['Won','Lost'].includes(d.stage)).length, contacts:db.contacts.length,
     quotes:db.quotes.length, invoices:db.invoices.filter(i=>i.status!=='Paid').length,
-    subs:db.subs.filter(s=>s.status==='Active').length, payments:db.payments.length};
+    payments:db.payments.length};
   document.querySelectorAll('[data-c]').forEach(e=>e.textContent = c[e.dataset.c] ?? '');
 }
 window.addEventListener('hashchange', route);
