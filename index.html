@@ -125,6 +125,8 @@
   table{width:100%;border-collapse:collapse}
   th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;
      padding:9px 16px;border-bottom:1px solid var(--line);background:var(--th-bg);white-space:nowrap}
+  th.sortable{cursor:pointer;user-select:none}
+  th.sortable:hover{color:var(--brand)}
   td{padding:11px 16px;border-bottom:1px solid var(--line);vertical-align:middle}
   tr:last-child td{border-bottom:0}
   tbody tr:hover{background:var(--row-hover)}
@@ -240,6 +242,7 @@
   <button class="grp" data-grp="system" onclick="toggleGrp('system')"><span data-i18n="grp.system">System</span><i class="chev">▾</i></button>
   <div class="grp-items" id="grp-system">
     <a href="#/automation"><span data-i18n="nav.automation">Automation log</span></a>
+    <a href="#/profile"><span data-i18n="nav.profile">Profile</span></a>
     <a href="#/users" id="nav-users" style="display:none"><span data-i18n="nav.users">Users</span></a>
     <a href="#/portal"><span data-i18n="nav.portal">Client portal preview</span></a>
   </div>
@@ -279,8 +282,8 @@
   </div>
 </div>
 
-<script src="supabase-config.js?v=25"></script>
-<script src="supabase-js.js?v=25"></script>
-<script src="app.js?v=25"></script>
+<script src="supabase-config.js?v=26"></script>
+<script src="supabase-js.js?v=26"></script>
+<script src="app.js?v=26"></script>
 </body>
 </html>

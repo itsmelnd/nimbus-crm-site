@@ -24,6 +24,13 @@ en: {
   'side.reset':'Reset demo data',
   'cur.tip':'Display currency','cur.USD':'USD — US Dollar','cur.SEK':'SEK — Swedish Krona','cur.NOK':'NOK — Norwegian Krone','cur.DKK':'DKK — Danish Krone','cur.EUR':'EUR — Euro',
   'theme.light':'Switch to light theme','theme.dark':'Switch to dark theme',
+  'nav.profile':'Profile',
+  'profile.sub':'Your account and preferences','profile.account':'Account','profile.email':'Email',
+  'profile.role':'Role','profile.companies':'Companies','profile.name':'Name',
+  'profile.preferences':'Preferences','profile.lang':'Language','profile.currency':'Currency','profile.theme':'Theme',
+  'profile.security':'Security','profile.newPassword':'New password','profile.changePassword':'Change password',
+  'profile.nameSaved':'Name updated.','profile.passwordChanged':'Password updated.',
+  'profile.pwShort':'Password must be at least 6 characters.',
   'st.New':'New','st.Contacted':'Contacted','st.Qualified':'Qualified','st.Proposal':'Proposal',
   'st.Won':'Won','st.Lost':'Lost','st.Draft':'Draft','st.Sent':'Sent','st.Opened':'Opened',
   'st.Accepted':'Accepted','st.Paid':'Paid','st.Active':'Active','st.Rejected':'Rejected',
@@ -160,6 +167,13 @@ sv: {
   'side.reset':'Återställ demodata',
   'cur.tip':'Visningsvaluta','cur.USD':'USD — Amerikansk dollar','cur.SEK':'SEK — Svensk krona','cur.NOK':'NOK — Norsk krona','cur.DKK':'DKK — Dansk krona','cur.EUR':'EUR — Euro',
   'theme.light':'Byt till ljust tema','theme.dark':'Byt till mörkt tema',
+  'nav.profile':'Profil',
+  'profile.sub':'Ditt konto och dina inställningar','profile.account':'Konto','profile.email':'E-post',
+  'profile.role':'Roll','profile.companies':'Företag','profile.name':'Namn',
+  'profile.preferences':'Inställningar','profile.lang':'Språk','profile.currency':'Valuta','profile.theme':'Tema',
+  'profile.security':'Säkerhet','profile.newPassword':'Nytt lösenord','profile.changePassword':'Byt lösenord',
+  'profile.nameSaved':'Namn uppdaterat.','profile.passwordChanged':'Lösenord uppdaterat.',
+  'profile.pwShort':'Lösenordet måste vara minst 6 tecken.',
   'st.New':'Ny','st.Contacted':'Kontaktad','st.Qualified':'Kvalificerad','st.Proposal':'Förslag',
   'st.Won':'Vunnen','st.Lost':'Förlorad','st.Draft':'Utkast','st.Sent':'Skickad','st.Opened':'Öppnad',
   'st.Accepted':'Accepterad','st.Paid':'Betald','st.Active':'Aktiv','st.Rejected':'Avvisad',
@@ -291,6 +305,13 @@ const t = (k, ...p) => {
   const s = (STR[lang] && STR[lang][k]) || STR.en[k] || k;
   return p.length ? s.replace(/%s/g, () => p.shift()) : s;
 };
+const setLang = l => {
+  if(l === lang) return;
+  lang = l;
+  try{ localStorage.setItem(LANG_KEY, lang); }catch(e){}
+  document.documentElement.lang = lang;
+  paintLang(); route();
+};
 const toggleLang = () => {
   lang = lang === 'sv' ? 'en' : 'sv';
   try{ localStorage.setItem(LANG_KEY, lang); }catch(e){}
@@ -318,6 +339,12 @@ function applyTheme(){
 }
 function toggleTheme(){
   theme = theme==='dark' ? 'light' : 'dark';
+  try{ localStorage.setItem('nimbus-theme', theme); }catch(e){}
+  applyTheme();
+}
+function setTheme(t){
+  if(t === theme) return;
+  theme = t;
   try{ localStorage.setItem('nimbus-theme', theme); }catch(e){}
   applyTheme();
 }
@@ -685,6 +712,53 @@ function onPgChange(p){
 const byId = (arr,id) => arr.find(x=>x.id===id);
 const person = r => (r && (r.contactName||'').trim()) ? r.contactName : '—';
 const company = id => (byId(db.companies,id) || {name:'—'}).name;
+
+/* sortable list columns */
+let sortState = {};
+function sortHead(tbl, key, label, extra=''){
+  const st = sortState[tbl];
+  const arrow = st && st.key===key ? (st.dir==='asc' ? ' ▲' : ' ▼') : '';
+  return `<th class="${extra} sortable" data-tbl="${tbl}" data-key="${key}" onclick="sortList('${tbl}','${key}')">${label}${arrow}</th>`;
+}
+function sortList(tbl, key){
+  const cur = sortState[tbl];
+  let dir;
+  if(!cur || cur.key !== key) dir = 'asc';               /* new column: start ascending */
+  else dir = cur.dir === 'asc' ? 'desc' : 'asc';          /* same column: flip */
+  sortState[tbl] = { key, dir };
+  if(tbl==='quotes'){ const th=document.getElementById('qth'); if(th) th.innerHTML = quotesThead(); onListInput('qtb'); }
+  else if(tbl==='invoices'){ const th=document.getElementById('ith'); if(th) th.innerHTML = invoicesThead(); onListInput('itb'); }
+  else if(tbl==='companies'){ const th=document.getElementById('coh'); if(th) th.innerHTML = companiesThead(); renderCompanies(); }
+}
+function sortVal(tbl, row, key){
+  if(tbl==='quotes'){
+    if(key==='client') return (person(row)||'').toLowerCase();
+    if(key==='total') return quoteTotal(row);
+    if(key==='invoices') return invoicesOf(row.id).length;
+    return (row[key] ?? '');
+  }
+  if(tbl==='invoices'){
+    if(key==='client') return (person(row)||'').toLowerCase();
+    if(key==='status') return invStatus(row);
+    if(key==='paid') return paidOf(row);
+    return (row[key] ?? '');
+  }
+  if(tbl==='companies'){
+    if(key==='deals') return db.deals.filter(d=>d.companyId===row.id).length;
+    if(key==='value') return db.deals.filter(d=>d.companyId===row.id && d.stage!=='Lost').reduce((s,d)=>s+d.value,0);
+    return (row[key] ?? '');
+  }
+  return (row[key] ?? '');
+}
+function sortRows(tbl, list){
+  const st = sortState[tbl]; if(!st) return list;
+  const dir = st.dir==='asc' ? 1 : -1;
+  return [...list].sort((a,b)=>{
+    const x = sortVal(tbl,a,st.key), y = sortVal(tbl,b,st.key);
+    if(typeof x === 'string') return x.localeCompare(y) * dir;
+    return (x>y?1:x<y?-1:0) * dir;
+  });
+}
 const quoteSub = q => q.items.reduce((s,i)=>s + i.qty*i.price, 0);
 const quoteTax = q => quoteSub(q) * (q.tax/100);
 const quoteTotal = q => quoteSub(q) + quoteTax(q);
@@ -910,7 +984,21 @@ function newDeal(companyId){
 function vCompanies(){
   head(t('nav.companies'), t('companies.sub'),
     adminOnly(`<button class="primary" onclick="newCompany()">${t('btn.newCompany')}</button>`));
-  const rows = db.companies.map(c=>{
+  view().innerHTML = `<div class="card"><table>
+    <thead id="coh">${companiesThead()}</thead>
+    <tbody id="cob">${companiesRows()}</tbody></table>${db.companies.length?'':'<div class="empty">'+t('companies.empty')+'</div>'}</div>`;
+}
+function companiesThead(){
+  return `<tr>
+    ${sortHead('companies','name',t('th.name'))}
+    ${sortHead('companies','industry',t('th.industry'))}
+    ${sortHead('companies','deals',t('th.deals'),'num')}
+    ${sortHead('companies','value',t('th.value'),'num')}
+    <th></th>
+  </tr>`;
+}
+function companiesRows(){
+  return sortRows('companies', db.companies).map(c=>{
     const ds = db.deals.filter(d=>d.companyId===c.id);
     const val = ds.filter(d=>!['Lost'].includes(d.stage)).reduce((s,d)=>s+d.value,0);
     return `<tr>
@@ -922,11 +1010,8 @@ function vCompanies(){
         <button class="sm ghost danger" onclick="delCompany('${c.id}')">${t('btn.delete')}</button>`)}</td>
     </tr>`;
   }).join('');
-  view().innerHTML = `<div class="card"><table>
-    <thead><tr><th>${t('th.name')}</th><th>${t('th.industry')}</th><th class="num">${t('th.deals')}</th>
-      <th class="num">${t('th.value')}</th><th></th></tr></thead>
-    <tbody>${rows||''}</tbody></table>${db.companies.length?'':'<div class="empty">'+t('companies.empty')+'</div>'}</div>`;
 }
+function renderCompanies(){ const t=document.getElementById('cob'); if(t) t.innerHTML = companiesRows(); }
 function newCompany(){
   modal({title:t('btn.newCompany'), body:`
     <div class="row">
@@ -973,15 +1058,27 @@ function vQuotes(){
         ${['Draft','Sent','Accepted','Rejected'].map(s=>`<option value="${s}">${t('st.'+s)}</option>`).join('')}
       </select></div>
     <div class="card"><table>
-      <thead><tr><th>${t('th.number')}</th><th>${t('th.client')}</th><th>${t('th.status')}</th><th>${t('th.created')}</th><th>${t('th.valid')}</th>
-        <th class="num">${t('th.total')}</th><th class="num">${t('th.invoices')}</th><th></th></tr></thead>
+      <thead id="qth">${quotesThead()}</thead>
       <tbody id="qtb">${quoteRows()}</tbody></table></div>`;
+}
+function quotesThead(){
+  return `<tr>
+    ${sortHead('quotes','no',t('th.number'))}
+    ${sortHead('quotes','client',t('th.client'))}
+    ${sortHead('quotes','status',t('th.status'))}
+    ${sortHead('quotes','created',t('th.created'))}
+    ${sortHead('quotes','valid',t('th.valid'))}
+    ${sortHead('quotes','total',t('th.total'),'num')}
+    ${sortHead('quotes','invoices',t('th.invoices'),'num')}
+    <th></th>
+  </tr>`;
 }
 function quoteRows(){
   const s=(document.getElementById('q')?.value||'').toLowerCase();
   const f=document.getElementById('f')?.value||'';
-  const list = db.quotes.filter(x=>!f || x.status===f)
-    .filter(x=>!s || (x.no+' '+person(x)+' '+company(x.companyId)).toLowerCase().includes(s));
+  const list = sortRows('quotes', db.quotes
+    .filter(x=>!f || x.status===f)
+    .filter(x=>!s || (x.no+' '+person(x)+' '+company(x.companyId)).toLowerCase().includes(s)));
   if(!list.length) return `<tr><td colspan="8"><div class="nomatches">${t('list.none')}</div></td></tr>`;
   return list.map(q=>`<tr>
     <td class="mono link" onclick="go('#/quote/${q.id}')">${q.no}</td>
@@ -1180,15 +1277,28 @@ function vInvoices(){
         ${['Draft','Sent','Overdue','Paid','Void'].map(s=>`<option value="${s}">${t('st.'+s)}</option>`).join('')}
       </select></div>
     <div class="card"><table>
-      <thead><tr><th>${t('th.number')}</th><th>${t('th.client')}</th><th>${t('th.fromQuote')}</th><th>${t('th.status')}</th><th>${t('th.issued')}</th><th>${t('th.due')}</th>
-        <th class="num">${t('th.amount')}</th><th class="num">${t('th.paid')}</th><th></th></tr></thead>
+      <thead id="ith">${invoicesThead()}</thead>
       <tbody id="itb">${invoiceRows()}</tbody></table></div>`;
+}
+function invoicesThead(){
+  return `<tr>
+    ${sortHead('invoices','no',t('th.number'))}
+    ${sortHead('invoices','client',t('th.client'))}
+    <th>${t('th.fromQuote')}</th>
+    ${sortHead('invoices','status',t('th.status'))}
+    ${sortHead('invoices','issued',t('th.issued'))}
+    ${sortHead('invoices','due',t('th.due'))}
+    ${sortHead('invoices','amount',t('th.amount'),'num')}
+    ${sortHead('invoices','paid',t('th.paid'),'num')}
+    <th></th>
+  </tr>`;
 }
 function invoiceRows(){
   const s=(document.getElementById('q')?.value||'').toLowerCase();
   const f=document.getElementById('f')?.value||'';
-  const list = db.invoices.filter(i=>!f || (f==='Overdue' ? invStatus(i)==='Overdue' : i.status===f))
-    .filter(i=>!s || (i.no+' '+person(i)+' '+company(i.companyId)).toLowerCase().includes(s));
+  const list = sortRows('invoices', db.invoices
+    .filter(i=>!f || (f==='Overdue' ? invStatus(i)==='Overdue' : i.status===f))
+    .filter(i=>!s || (i.no+' '+person(i)+' '+company(i.companyId)).toLowerCase().includes(s)));
   if(!list.length) return `<tr><td colspan="9"><div class="nomatches">${t('list.none')}</div></td></tr>`;
   return list.map(i=>{
     const st=invStatus(i), q = byId(db.quotes,i.quoteId);
@@ -1363,6 +1473,55 @@ function viewDoc(id){
   modal({title:t('doc.offer', q.no), wide:true, body:quoteDoc(q), ok:''});
 }
 
+/* ---------------- profile ---------------- */
+function vProfile(){
+  const me = ME || { id:null, email:'demo@nimbus.local', name:'Demo Admin', role:'admin', company_ids:[] };
+  const cos = (me.company_ids||[]).map(id=>byId(db.companies,id)).filter(Boolean);
+  head(t('nav.profile'), t('profile.sub'));
+  const curOpts = Object.keys(CUR).map(c=>`<option value="${c}" ${c===curr?'selected':''}>${esc(t('cur.'+c))}</option>`).join('');
+  view().innerHTML = `
+  <div class="split">
+    <div class="card"><div class="hd"><h2>${t('profile.account')}</h2></div><div class="bd">
+      <div class="field"><label>${t('profile.email')}</label>${esc(me.email||'—')}</div>
+      <div class="field"><label>${t('profile.role')}</label>${me.role==='admin' ? t('users.roleAdmin') : t('users.roleUser')}</div>
+      <div class="field"><label>${t('profile.companies')}</label>${cos.map(c=>esc(c.name)).join(', ')||'—'}</div>
+      <div class="field"><label>${t('profile.name')}</label><input id="pf-name" value="${esc(me.name||'')}"></div>
+      <button class="primary" onclick="saveProfileName()">${t('btn.save')}</button>
+    </div></div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card"><div class="hd"><h2>${t('profile.preferences')}</h2></div><div class="bd">
+        <div class="field"><label>${t('profile.lang')}</label>
+          <select onchange="setLang(this.value)"><option value="sv" ${lang==='sv'?'selected':''}>Svenska</option><option value="en" ${lang==='en'?'selected':''}>English</option></select></div>
+        <div class="field"><label>${t('profile.currency')}</label><select onchange="changeCurr(this.value)">${curOpts}</select></div>
+        <div class="field"><label>${t('profile.theme')}</label>
+          <select onchange="setTheme(this.value)"><option value="light" ${theme==='light'?'selected':''}>${t('theme.light')}</option><option value="dark" ${theme==='dark'?'selected':''}>${t('theme.dark')}</option></select></div>
+      </div></div>
+      <div class="card"><div class="hd"><h2>${t('profile.security')}</h2></div><div class="bd">
+        <div class="field"><label>${t('profile.newPassword')}</label><input type="password" id="pf-pw" autocomplete="new-password"></div>
+        <button class="primary" onclick="saveProfilePw()">${t('profile.changePassword')}</button>
+      </div></div>
+    </div>
+  </div>`;
+}
+async function saveProfileName(){
+  const name = (document.getElementById('pf-name')?.value||'').trim();
+  if(!name) return;
+  if(!sb){ ME = Object.assign({}, ME, { name }); toast(t('profile.nameSaved')); return; }
+  const res = await sb.functions.invoke('update-profile', { body: { name } });
+  if(res.error || (res.data && res.data.error)){ alert((res.error && res.error.message) || (res.data && res.data.error)); return; }
+  ME = Object.assign({}, ME, { name });
+  toast(t('profile.nameSaved'));
+}
+async function saveProfilePw(){
+  const pw = document.getElementById('pf-pw')?.value || '';
+  if(pw.length < 6){ alert(t('profile.pwShort')); return; }
+  if(!sb){ alert(t('profile.pwShort')); return; }
+  const { error } = await sb.auth.updateUser({ password: pw });
+  if(error){ alert(error.message); return; }
+  const el = document.getElementById('pf-pw'); if(el) el.value = '';
+  toast(t('profile.passwordChanged'));
+}
+
 /* ---------------- users (admin only) ---------------- */
 function vUsers(){
   if(!sb){ notFound(); return; }
@@ -1458,6 +1617,7 @@ const ROUTES = [
   [/^#\/invoices$/, vInvoices],
   [/^#\/payments$/, vPayments],
   [/^#\/automation$/, vAutomation],
+  [/^#\/profile$/, vProfile],
   [/^#\/users$/, vUsers],
   [/^#\/portal\/?(.*)$/, vPortal],
 ];
