@@ -203,6 +203,23 @@
   .tl time{color:var(--muted);font-size:11.5px;margin-left:auto;white-space:nowrap}
   .items th,.items td{padding:8px 10px}
   .items input{padding:6px 8px}
+
+  /* list search/filter toolbar */
+  .listbar{display:flex;gap:8px;margin-bottom:12px;max-width:560px}
+  .listbar input{flex:1}
+  .listbar select{width:auto}
+  .nomatches{text-align:center;color:var(--muted);padding:18px}
+
+  /* print / PDF — only the .print-area is visible on paper */
+  @media print{
+    body{background:#fff}
+    aside,header,.toast,#login,.listbar{display:none !important}
+    body *{visibility:hidden}
+    .print-area,.print-area *{visibility:visible}
+    .print-area{position:absolute;left:0;top:0;width:100%;border:0;box-shadow:none}
+    .split{display:block}
+    .card{box-shadow:none;border:0}
+  }
 </style>
 </head>
 <body>
@@ -212,6 +229,7 @@
   <button class="grp" data-grp="sales" onclick="toggleGrp('sales')"><span data-i18n="grp.sales">Sales</span><i class="chev">▾</i></button>
   <div class="grp-items" id="grp-sales">
     <a href="#/pipeline"><span data-i18n="nav.pipeline">Pipeline</span> <span class="count" data-c="deals"></span></a>
+    <a href="#/companies"><span data-i18n="nav.companies">Companies</span></a>
     <a href="#/quotes"><span data-i18n="nav.quotes">Offers &amp; Quotes</span> <span class="count" data-c="quotes"></span></a>
   </div>
   <button class="grp" data-grp="revenue" onclick="toggleGrp('revenue')"><span data-i18n="grp.revenue">Revenue</span><i class="chev">▾</i></button>
@@ -261,8 +279,8 @@
   </div>
 </div>
 
-<script src="supabase-config.js?v=24"></script>
-<script src="supabase-js.js?v=24"></script>
-<script src="app.js?v=24"></script>
+<script src="supabase-config.js?v=25"></script>
+<script src="supabase-js.js?v=25"></script>
+<script src="app.js?v=25"></script>
 </body>
 </html>

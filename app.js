@@ -16,7 +16,7 @@ try{ lang = localStorage.getItem(LANG_KEY) || 'sv'; }catch(e){}
 const STR = {
 en: {
   'app.title':'Nimbus CRM — Demo',
-  'nav.dashboard':'Dashboard','nav.pipeline':'Pipeline',
+  'nav.dashboard':'Dashboard','nav.pipeline':'Pipeline','nav.companies':'Companies',
   'nav.quotes':'Offers & Quotes','nav.invoices':'Invoices',
   'nav.payments':'Payments','nav.automation':'Automation log','nav.portal':'Client portal preview',
   'grp.sales':'Sales','grp.revenue':'Revenue','grp.system':'System',
@@ -53,6 +53,15 @@ en: {
   'th.what':'What','th.record':'Record','th.amount':'Amount','th.when':'When',
   'pipeline.sub':'Drag cards between stages · %s open',
   'board.compact':'Compact','board.roomy':'Large',
+  'companies.sub':'Companies and their pipelines','companies.empty':'No companies yet.',
+  'companies.hasDeals':'This company has deals — remove or move its deals first.',
+  'field.industry':'Industry','confirm.delCompany':'Delete company "%s"?',
+  'field.name':'Name',
+  'toast.companyCreated':'Company added.','toast.companyUpdated':'Company updated.','toast.companyDeleted':'Company deleted.',
+  'list.search':'Search…','list.all':'All statuses','list.none':'No matches.',
+  'btn.newCompany':'New company','btn.edit':'Edit','btn.print':'Print',
+  'th.industry':'Industry','th.deals':'Deals','th.value':'Value','th.name':'Name',
+  'doc.invoice':'Invoice %s','doc.due':'Due %s',
   'confirm.delDeal':'Delete deal "%s"? (demo data only)',
   'field.dealName':'Deal name','field.value':'Value','field.stage':'Stage',
   'field.close':'Expected close','btn.createDeal':'Create deal','toast.dealCreated':'Deal created.',
@@ -143,7 +152,7 @@ en: {
 },
 sv: {
   'app.title':'Nimbus CRM – Demo',
-  'nav.dashboard':'Översikt','nav.pipeline':'Pipeline',
+  'nav.dashboard':'Översikt','nav.pipeline':'Pipeline','nav.companies':'Företag',
   'nav.quotes':'Offerter','nav.invoices':'Fakturor',
   'nav.payments':'Betalningar','nav.automation':'Automatiseringslogg','nav.portal':'Kundportal',
   'grp.sales':'Försäljning','grp.revenue':'Intäkter','grp.system':'System',
@@ -180,6 +189,15 @@ sv: {
   'th.what':'Vad','th.record':'Post','th.amount':'Belopp','th.when':'När',
   'pipeline.sub':'Dra kort mellan stadier · %s öppna',
   'board.compact':'Kompakt','board.roomy':'Stor',
+  'companies.sub':'Företag och deras pipelines','companies.empty':'Inga företag ännu.',
+  'companies.hasDeals':'Företaget har affärer — ta bort eller flytta dem först.',
+  'field.industry':'Bransch','confirm.delCompany':'Ta bort företaget "%s"?',
+  'field.name':'Namn',
+  'toast.companyCreated':'Företag tillagt.','toast.companyUpdated':'Företag uppdaterat.','toast.companyDeleted':'Företag borttaget.',
+  'list.search':'Sök…','list.all':'Alla statusar','list.none':'Inga träffar.',
+  'btn.newCompany':'Nytt företag','btn.edit':'Ändra','btn.print':'Skriv ut',
+  'th.industry':'Bransch','th.deals':'Affärer','th.value':'Värde','th.name':'Namn',
+  'doc.invoice':'Faktura %s','doc.due':'Förfaller %s',
   'confirm.delDeal':'Ta bort affären "%s"? (endast demodata)',
   'field.dealName':'Affärsnamn','field.value':'Värde','field.stage':'Stadie',
   'field.close':'Förväntad stängning','btn.createDeal':'Skapa affär','toast.dealCreated':'Affär skapad.',
@@ -822,13 +840,11 @@ function toggleBoard(){
   try{ localStorage.setItem('nimbus-board', compactBoard ? '1' : '0'); }catch(e){}
   route();
 }
-function vPipeline(){
-  const total = db.deals.filter(d=>!['Won','Lost'].includes(d.stage)).reduce((s,d)=>s+d.value,0);
-  head(t('nav.pipeline'), t('pipeline.sub', money(total)),
-    `<button class="sm" id="boardbtn" onclick="toggleBoard()">${t(compactBoard?'board.roomy':'board.compact')}</button>` +
-    adminOnly(`<button class="primary" onclick="newDeal()">${t('btn.newDeal')}</button>`));
-  view().innerHTML = `<div class="board${compactBoard?' compact':''}">${STAGES.map(s=>{
-    const ds = db.deals.filter(d=>d.stage===s);
+function boardHtml(){
+  const q = (document.getElementById('q')?.value||'').toLowerCase();
+  const match = d => !q || (d.title+' '+(d.contactName||'')+' '+company(d.companyId)).toLowerCase().includes(q);
+  return `<div class="board${compactBoard?' compact':''}">${STAGES.map(s=>{
+    const ds = db.deals.filter(d=>d.stage===s && match(d));
     return `<div class="col" data-stage="${s}" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event,'${s}')">
       <h3><span>${t('st.'+s)}</span><span>${ds.length} · ${money(ds.reduce((a,d)=>a+d.value,0))}</span></h3>
       ${ds.map(d=>`<div class="deal" draggable="true" ondragstart="dragStart(event,'${d.id}')">
@@ -841,6 +857,15 @@ function vPipeline(){
         </div>`)}</div>`).join('')}
     </div>`;
   }).join('')}</div>`;
+}
+function onDealSearch(){ const w = document.getElementById('boardwrap'); if(w) w.innerHTML = boardHtml(); }
+function vPipeline(){
+  const total = db.deals.filter(d=>!['Won','Lost'].includes(d.stage)).reduce((s,d)=>s+d.value,0);
+  head(t('nav.pipeline'), t('pipeline.sub', money(total)),
+    `<button class="sm" id="boardbtn" onclick="toggleBoard()">${t(compactBoard?'board.roomy':'board.compact')}</button>` +
+    adminOnly(`<button class="primary" onclick="newDeal()">${t('btn.newDeal')}</button>`));
+  view().innerHTML = `<div class="listbar"><input id="q" placeholder="${t('list.search')}" oninput="onDealSearch()"></div>
+    <div id="boardwrap">${boardHtml()}</div>`;
 }
 let dragging=null;
 function dragStart(e,id){ dragging=id; e.dataTransfer.effectAllowed='move'; }
@@ -881,11 +906,84 @@ function newDeal(companyId){
     }});
 }
 
+/* ---------------- companies ---------------- */
+function vCompanies(){
+  head(t('nav.companies'), t('companies.sub'),
+    adminOnly(`<button class="primary" onclick="newCompany()">${t('btn.newCompany')}</button>`));
+  const rows = db.companies.map(c=>{
+    const ds = db.deals.filter(d=>d.companyId===c.id);
+    const val = ds.filter(d=>!['Lost'].includes(d.stage)).reduce((s,d)=>s+d.value,0);
+    return `<tr>
+      <td><b>${esc(c.name)}</b></td>
+      <td>${esc(c.industry||'—')}</td>
+      <td class="num">${ds.length}</td>
+      <td class="num">${money(val)}</td>
+      <td style="text-align:right">${adminOnly(`<button class="sm" onclick="editCompany('${c.id}')">${t('btn.edit')}</button>
+        <button class="sm ghost danger" onclick="delCompany('${c.id}')">${t('btn.delete')}</button>`)}</td>
+    </tr>`;
+  }).join('');
+  view().innerHTML = `<div class="card"><table>
+    <thead><tr><th>${t('th.name')}</th><th>${t('th.industry')}</th><th class="num">${t('th.deals')}</th>
+      <th class="num">${t('th.value')}</th><th></th></tr></thead>
+    <tbody>${rows||''}</tbody></table>${db.companies.length?'':'<div class="empty">'+t('companies.empty')+'</div>'}</div>`;
+}
+function newCompany(){
+  modal({title:t('btn.newCompany'), body:`
+    <div class="row">
+      <div class="field"><label>${t('field.name')}</label><input name="name" required placeholder="ACME AB"></div>
+      <div class="field"><label>${t('field.industry')}</label><input name="industry" placeholder="Manufacturing"></div>
+    </div>`,
+    ok:t('btn.create'),
+    onSubmit(d){
+      if(!d.name) return false;
+      db.companies.unshift({id:uid('co'),name:d.name,industry:d.industry||null});
+      toast(t('toast.companyCreated'));
+    }});
+}
+function editCompany(id){
+  const c = byId(db.companies,id); if(!c) return;
+  modal({title:t('btn.edit'), body:`
+    <div class="row">
+      <div class="field"><label>${t('field.name')}</label><input name="name" value="${esc(c.name)}" required></div>
+      <div class="field"><label>${t('field.industry')}</label><input name="industry" value="${esc(c.industry||'')}"></div>
+    </div>`,
+    ok:t('btn.save'),
+    onSubmit(d){
+      if(!d.name) return false;
+      c.name = d.name; c.industry = d.industry||null;
+      toast(t('toast.companyUpdated'));
+    }});
+}
+function delCompany(id){
+  const c = byId(db.companies,id); if(!c) return;
+  if(db.deals.some(d=>d.companyId===id)){ alert(t('companies.hasDeals')); return; }
+  if(!confirm(t('confirm.delCompany', c.name))) return;
+  db.companies = db.companies.filter(x=>x.id!==id);
+  toast(t('toast.companyDeleted')); save(); route();
+}
+
 /* ---------------- quotes ---------------- */
 function vQuotes(){
   head(t('nav.quotes'), t('quotes.sub'),
     adminOnly(`<button class="primary" onclick="newQuote()">${t('btn.newQuote')}</button>`));
-  const rows = db.quotes.map(q=>`<tr>
+  view().innerHTML = `
+    <div class="listbar"><input id="q" placeholder="${t('list.search')}" oninput="onListInput('qtb')">
+      <select id="f" onchange="onListInput('qtb')">
+        <option value="">${t('list.all')}</option>
+        ${['Draft','Sent','Accepted','Rejected'].map(s=>`<option value="${s}">${t('st.'+s)}</option>`).join('')}
+      </select></div>
+    <div class="card"><table>
+      <thead><tr><th>${t('th.number')}</th><th>${t('th.client')}</th><th>${t('th.status')}</th><th>${t('th.created')}</th><th>${t('th.valid')}</th>
+        <th class="num">${t('th.total')}</th><th class="num">${t('th.invoices')}</th><th></th></tr></thead>
+      <tbody id="qtb">${quoteRows()}</tbody></table></div>`;
+}
+function quoteRows(){
+  const s=(document.getElementById('q')?.value||'').toLowerCase();
+  const f=document.getElementById('f')?.value||'';
+  const list = db.quotes.filter(x=>!f || x.status===f)
+    .filter(x=>!s || (x.no+' '+person(x)+' '+company(x.companyId)).toLowerCase().includes(s));
+  if(!list.length) return `<tr><td colspan="8"><div class="nomatches">${t('list.none')}</div></td></tr>`;
+  return list.map(q=>`<tr>
     <td class="mono link" onclick="go('#/quote/${q.id}')">${q.no}</td>
     <td>${esc(person(q))}<div class="muted" style="font-size:12px">${esc(company(q.companyId))}</div></td>
     <td>${tag(q.status)}</td>
@@ -897,10 +995,10 @@ function vQuotes(){
       ${adminOnly((q.status==='Draft'?`<button class="sm primary" onclick="sendQuote('${q.id}')">${t('btn.send')}</button>`:'') + (q.status==='Sent'?`<button class="sm" onclick="acceptQuote('${q.id}')">${t('btn.markAccept')}</button>`:''))}
       <button class="sm" onclick="go('#/quote/${q.id}')">${t('btn.open')}</button>
     </td></tr>`).join('');
-  view().innerHTML = `<div class="card"><table>
-    <thead><tr><th>${t('th.number')}</th><th>${t('th.client')}</th><th>${t('th.status')}</th><th>${t('th.created')}</th><th>${t('th.valid')}</th>
-      <th class="num">${t('th.total')}</th><th class="num">${t('th.invoices')}</th><th></th></tr></thead>
-    <tbody>${rows}</tbody></table>${db.quotes.length?'':'<div class="empty">'+t('quotes.empty')+'</div>'}</div>`;
+}
+function onListInput(tid){
+  const t = document.getElementById(tid); if(!t) return;
+  t.innerHTML = tid==='qtb' ? quoteRows() : invoiceRows();
 }
 
 function newQuote(dealId){
@@ -953,12 +1051,13 @@ function vQuote(id){
         <button onclick="rejectQuote('${q.id}')">${t('btn.markReject')}</button>`:'') +
       (q.status==='Accepted'?`<button class="primary" onclick="makeInvoices('${q.id}')">${t('btn.genInv')}</button>`:'')
     ) +
-    `<a class="btn" href="#/portal/${q.companyId}">${t('btn.clientView')}</a>`);
+    `<button class="sm" onclick="window.print()">${t('btn.print')}</button>
+    <a class="btn" href="#/portal/${q.companyId}">${t('btn.clientView')}</a>`);
   const invs = invoicesOf(q.id);
   view().innerHTML = `
   <a class="btn sm ghost" href="#/quotes">${t('btn.back')}</a>
   <div class="split" style="margin-top:12px">
-    <div class="card"><div class="bd">${quoteDoc(q)}</div></div>
+    <div class="card print-area"><div class="bd">${quoteDoc(q)}</div></div>
     <div style="display:flex;flex-direction:column;gap:16px">
       <div class="card"><div class="hd"><h2>${t('quote.status')}</h2></div><div class="bd">
         <div class="field"><label>${t('field.current')}</label>${tag(q.status)}</div>
@@ -1074,7 +1173,24 @@ function vInvoices(){
   const out = db.invoices.filter(i=>i.status!=='Paid').reduce((s,i)=>s+i.amount-paidOf(i),0);
   head(t('nav.invoices'), t('invoices.sub', money(out)),
     adminOnly(`<button onclick="runAutomations()">${t('btn.sendRemind')}</button>`));
-  const rows = db.invoices.map(i=>{
+  view().innerHTML = `
+    <div class="listbar"><input id="q" placeholder="${t('list.search')}" oninput="onListInput('itb')">
+      <select id="f" onchange="onListInput('itb')">
+        <option value="">${t('list.all')}</option>
+        ${['Draft','Sent','Overdue','Paid','Void'].map(s=>`<option value="${s}">${t('st.'+s)}</option>`).join('')}
+      </select></div>
+    <div class="card"><table>
+      <thead><tr><th>${t('th.number')}</th><th>${t('th.client')}</th><th>${t('th.fromQuote')}</th><th>${t('th.status')}</th><th>${t('th.issued')}</th><th>${t('th.due')}</th>
+        <th class="num">${t('th.amount')}</th><th class="num">${t('th.paid')}</th><th></th></tr></thead>
+      <tbody id="itb">${invoiceRows()}</tbody></table></div>`;
+}
+function invoiceRows(){
+  const s=(document.getElementById('q')?.value||'').toLowerCase();
+  const f=document.getElementById('f')?.value||'';
+  const list = db.invoices.filter(i=>!f || (f==='Overdue' ? invStatus(i)==='Overdue' : i.status===f))
+    .filter(i=>!s || (i.no+' '+person(i)+' '+company(i.companyId)).toLowerCase().includes(s));
+  if(!list.length) return `<tr><td colspan="9"><div class="nomatches">${t('list.none')}</div></td></tr>`;
+  return list.map(i=>{
     const st=invStatus(i), q = byId(db.quotes,i.quoteId);
     return `<tr>
       <td class="mono">${i.no}</td>
@@ -1086,13 +1202,38 @@ function vInvoices(){
       <td class="num">${money(i.amount)}</td>
       <td class="num">${paidOf(i)?money(paidOf(i)):'<span class="muted">—</span>'}</td>
       <td style="text-align:right">
+        <button class="sm" onclick="viewInvoice('${i.id}')">${t('btn.print')}</button>
         ${adminOnly((i.status==='Draft'?`<button class="sm" onclick="sendInvoice('${i.id}')">${t('btn.send')}</button>`:'') + (i.status!=='Paid'?`<button class="sm primary" onclick="payInvoice('${i.id}')">${t('btn.takePay')}</button>`:''))}
       </td></tr>`;
   }).join('');
-  view().innerHTML = `<div class="card"><table>
-    <thead><tr><th>${t('th.number')}</th><th>${t('th.client')}</th><th>${t('th.fromQuote')}</th><th>${t('th.status')}</th><th>${t('th.issued')}</th><th>${t('th.due')}</th>
-      <th class="num">${t('th.amount')}</th><th class="num">${t('th.paid')}</th><th></th></tr></thead>
-    <tbody>${rows}</tbody></table>${db.invoices.length?'':'<div class="empty">'+t('invoices.empty')+'</div>'}</div>`;
+}
+function invoiceDoc(i){
+  return `<div class="doc">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+      <div><h3>${t('doc.invoice', i.no)}</h3><div class="muted">${t('doc.due', fmtDate(i.due))}</div></div>
+      <div style="text-align:right"><b>Nimbus AB</b><div class="muted" style="font-size:12px">
+        Demo Street 1, Stockholm<br>billing@nimbus.example</div></div>
+    </div>
+    <div style="margin-bottom:16px"><label>${t('doc.prepared')}</label>
+      <b>${esc(person(i))}</b><div class="muted">${esc(company(i.companyId))} · ${esc(i.contactEmail||'')}</div></div>
+    <table class="items">
+      <tbody><tr><td>${esc(t(i.label))}</td><td class="num">${money(i.amount)}</td></tr></tbody>
+    </table>
+    <table style="margin-top:14px;margin-left:auto;width:280px">
+      <tbody>
+        <tr><td class="muted">${t('th.status')}</td><td class="num">${tag(invStatus(i))}</td></tr>
+        ${paidOf(i) ? `<tr><td class="muted">${t('th.paid')}</td><td class="num">${money(paidOf(i))}</td></tr>` : ''}
+        <tr><td><b>${t('doc.total')}</b></td><td class="num"><b>${money(i.amount)}</b></td></tr>
+      </tbody>
+    </table>
+    <p class="muted" style="font-size:12px;margin-top:18px">${t('doc.terms')}</p>
+  </div>`;
+}
+function viewInvoice(id){
+  const i=byId(db.invoices,id); if(!i) return;
+  modal({title:t('doc.invoice', i.no), wide:true, ok:'',
+    body:`<div class="print-area">${invoiceDoc(i)}</div>
+      <div style="margin-top:12px;text-align:right"><button type="button" class="primary" onclick="window.print()">${t('btn.print')}</button></div>`});
 }
 function sendInvoice(id){
   const i=byId(db.invoices,id); if(!i) return;
@@ -1311,6 +1452,7 @@ function go(h){ location.hash = h; }
 const ROUTES = [
   [/^#?\/?$|^#\/dashboard$/, vDashboard],
   [/^#\/pipeline$/, vPipeline],
+  [/^#\/companies$/, vCompanies],
   [/^#\/quotes$/, vQuotes],
   [/^#\/quote\/(.+)$/, vQuote],
   [/^#\/invoices$/, vInvoices],
