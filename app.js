@@ -61,8 +61,10 @@ en: {
   'pipeline.sub':'Drag cards between stages · %s open',
   'board.compact':'Compact','board.roomy':'Large',
   'companies.sub':'Companies and their pipelines','companies.empty':'No companies yet.',
-  'companies.deleted':'Company and %d deals deleted.','companies.undo':'Undo',
-  'field.industry':'Industry','confirm.delCompanyCascade':'Delete "%s" and all %d related deals? Quotes, invoices, subscriptions and payments will be deleted too.',
+  'companies.undo':'Undo',
+  'nav.trash':'Trash','trash.sub':'Deleted companies — restore or delete forever.','trash.empty':'The trash is empty.',
+  'trash.restore':'Restore','trash.purge':'Delete forever','trash.restored':'Company restored.','trash.purged':'Deleted forever.','trash.at':'Deleted',
+  'field.industry':'Industry','confirm.purgeTrash':'Permanently delete "%s" and all its data? This cannot be undone.',
   'field.name':'Name',
   'toast.companyCreated':'Company added.','toast.companyUpdated':'Company updated.','toast.companyDeleted':'Company deleted.','toast.undo':'Done — everything restored.',
   'list.search':'Search…','list.all':'All statuses','list.none':'No matches.',
@@ -204,8 +206,10 @@ sv: {
   'pipeline.sub':'Dra kort mellan stadier · %s öppna',
   'board.compact':'Kompakt','board.roomy':'Stor',
   'companies.sub':'Företag och deras pipelines','companies.empty':'Inga företag ännu.',
-  'companies.deleted':'Företaget och %d affärer raderades.','companies.undo':'Ångra',
-  'field.industry':'Bransch','confirm.delCompanyCascade':'Ta bort "%s" och alla %d tillhörande affärer? Offerter, fakturor, prenumerationer och betalningar raderas också.',
+  'companies.undo':'Ångra',
+  'nav.trash':'Papperskorg','trash.sub':'Borttagna företag — återställ eller radera för alltid.','trash.empty':'Papperskorgen är tom.',
+  'trash.restore':'Återställ','trash.purge':'Radera för alltid','trash.restored':'Företaget återställdes.','trash.purged':'Raderat för alltid.','trash.at':'Raderad',
+  'field.industry':'Bransch','confirm.purgeTrash':'Radera "%s" och all dess data för alltid? Detta kan inte ångras.',
   'field.name':'Namn',
   'toast.companyCreated':'Företag tillagt.','toast.companyUpdated':'Företag uppdaterat.','toast.companyDeleted':'Företag borttaget.','toast.undo':'Klart — allt återställt.',
   'list.search':'Sök…','list.all':'Alla statusar','list.none':'Inga träffar.',
@@ -483,6 +487,7 @@ function seed(){
       {id:'pm_1',invoiceId:'in_1',amount:7812.50,method:'Card (demo)',ref:'ch_demo_8f21a',date:days(base,-18)},
     ],
     log: [],
+    trash: [],
     seq: {q:1044,i:2044}
   };
   d.log = [
@@ -511,6 +516,7 @@ const TBL = {
   subs:{db:'subs', map:{companyId:'company_id', contactName:'contact_name', contactEmail:'contact_email'}},
   payments:{db:'payments', map:{invoiceId:'invoice_id', companyId:'company_id'}},
   log:{db:'log', map:{}},
+  trash:{db:'trash', map:{companyId:'company_id'}},
 };
 const REV = Object.fromEntries(Object.entries(TBL).map(([t,v])=>[t, Object.fromEntries(Object.entries(v.map).map(([a,b])=>[b,a]))]));
 const flip = (map,o) => { const r={}; for(const [k,v] of Object.entries(o||{})) r[map[k]||k]=v; return r; };
@@ -572,7 +578,7 @@ async function load(){
     const qs = Object.keys(TBL).map(t=>sb.from(TBL[t].db).select('*'));
     qs.push(sb.from('meta').select('key,value'));
     const rs = await Promise.all(qs);
-    const [companies,deals,quotes,invoices,subs,payments,log,meta] = rs.map(r=>r.data||[]);
+    const [companies,deals,quotes,invoices,subs,payments,log,trash,meta] = rs.map(r=>r.data||[]);
     if(companies.length || deals.length || meta.length){
       db = {
         companies: companies.map(fromRow('companies')),
@@ -582,6 +588,7 @@ async function load(){
         subs: subs.map(fromRow('subs')),
         payments: payments.map(fromRow('payments')),
         log: log.map(fromRow('log')),
+        trash: trash.map(fromRow('trash')),
         clock: ((meta.find(m=>m.key==='clock')||{}).value||{}).d || '2026-08-19',
         seq: (meta.find(m=>m.key==='seq')||{}).value || {q:1044,i:2044},
       };
@@ -681,7 +688,7 @@ if(sb){
    changes for rows they are allowed to see. On reconnect we reload
    everything to catch events missed while offline. */
 let rtChannel = null, rtJoined = false;
-let undoBuf = null, undoTimer = null;   /* cascade-delete snapshot for undo */
+let undoMap = {};   /* companyId -> cascade snapshot + 5s timer (row shows Ångra) */
 function subscribeRealtime(){
   if(!sb || !ME || rtChannel) return;
   rtJoined = false;
@@ -703,7 +710,7 @@ function onPgChange(p){
   if(!db[p.table]) return;
   if(p.eventType === 'DELETE'){
     const id = (p.old||{}).id; if(!id) return;
-    if(undoBuf && undoBuf[p.table] && undoBuf[p.table].some(r=>r.id===id)) return;  /* pending undo: don't drop restored rows */
+    if(Object.values(undoMap).some(u=>u[p.table] && u[p.table].some(r=>r.id===id))) return;  /* pending undo: don't drop restored rows */
     db[p.table] = db[p.table].filter(r => r.id !== id);
   } else if(p.new){
     const row = fromRow(p.table)(p.new);
@@ -1007,13 +1014,16 @@ function companiesRows(){
   return sortRows('companies', db.companies).map(c=>{
     const ds = db.deals.filter(d=>d.companyId===c.id);
     const val = ds.filter(d=>!['Lost'].includes(d.stage)).reduce((s,d)=>s+d.value,0);
-    return `<tr>
+    const u = undoMap[c.id];
+    return `<tr class="${u?'undoing':''}">
       <td><b>${esc(c.name)}</b></td>
       <td>${esc(c.industry||'—')}</td>
       <td class="num">${ds.length}</td>
       <td class="num">${money(val)}</td>
-      <td style="text-align:right">${adminOnly(`<button class="sm" onclick="editCompany('${c.id}')">${t('btn.edit')}</button>
-        <button class="sm ghost danger" onclick="delCompany('${c.id}')">${t('btn.delete')}</button>`)}</td>
+      <td style="text-align:right">${u
+        ? `<button class="sm primary" onclick="undoDeleteCompany('${c.id}')">${t('companies.undo')}</button>`
+        : adminOnly(`<button class="sm" onclick="editCompany('${c.id}')">${t('btn.edit')}</button>
+          <button class="sm ghost danger" onclick="delCompany('${c.id}')">${t('btn.delete')}</button>`)}</td>
     </tr>`;
   }).join('');
 }
@@ -1046,7 +1056,7 @@ function editCompany(id){
     }});
 }
 function delCompany(id){
-  const c = byId(db.companies,id); if(!c) return;
+  const c = byId(db.companies,id); if(!c || undoMap[id]) return;
   /* collect the full cascade: company → deals → quotes → invoices → subs/payments */
   const deals   = db.deals.filter(d=>d.companyId===id);
   const dealIds = new Set(deals.map(d=>d.id));
@@ -1056,43 +1066,68 @@ function delCompany(id){
   const iIds    = new Set(invoices.map(i=>i.id));
   const subs    = db.subs.filter(s=>s.companyId===id);
   const payments= db.payments.filter(p=>p.companyId===id || iIds.has(p.invoiceId));
-  if(!confirm(t('confirm.delCompanyCascade', c.name, deals.length))) return;
-  /* remove child → parent so in-memory references never dangle */
+  /* nothing is removed yet — the row's Ta bort button turns into Ångra for 5 s;
+     only when the timer fires does the cascade happen and the company moves to the trash */
+  undoMap[id] = { company:c, deals, quotes, invoices, subs, payments, timer: setTimeout(()=>trashCompany(id), 5000) };
+  route();
+}
+function undoDeleteCompany(id){
+  const u = undoMap[id]; if(!u) return;
+  clearTimeout(u.timer);
+  delete undoMap[id];
+  toast(t('toast.undo')); route();
+}
+function trashCompany(id){
+  const u = undoMap[id]; if(!u) return;
+  delete undoMap[id];
+  /* now actually cascade: remove child → parent so in-memory references never dangle */
+  const dealIds = new Set(u.deals.map(d=>d.id));
+  const qIds    = new Set(u.quotes.map(q=>q.id));
+  const iIds    = new Set(u.invoices.map(i=>i.id));
   db.payments  = db.payments.filter(p=>p.companyId!==id && !iIds.has(p.invoiceId));
   db.invoices  = db.invoices.filter(i=>!iIds.has(i.id));
   db.quotes    = db.quotes.filter(q=>!qIds.has(q.id));
   db.subs      = db.subs.filter(s=>s.companyId!==id);
   db.deals     = db.deals.filter(d=>!dealIds.has(d.id));
   db.companies = db.companies.filter(x=>x.id!==id);
-  /* keep a snapshot so the user can undo within 10 s */
-  undoBuf = {company:c, deals, quotes, invoices, subs, payments};
-  clearTimeout(undoTimer);
-  undoTimer = setTimeout(clearUndo, 10000);
-  showUndoBar(t('companies.deleted', deals.length));
+  db.trash.unshift({id:uid('tr'), companyId:id,
+    at: iso(today()) + ' ' + new Date().toTimeString().slice(0,5),
+    name:u.company.name, deals:u.deals.length,
+    snapshot:{company:u.company, deals:u.deals, quotes:u.quotes, invoices:u.invoices, subs:u.subs, payments:u.payments}});
   save(); route();
 }
-function showUndoBar(msg){
-  const old = document.getElementById('undo-bar'); if(old) old.remove();
-  const el = document.createElement('div'); el.id = 'undo-bar';
-  el.innerHTML = `<span>${msg}</span><button onclick="undoDeleteCompany()">${t('companies.undo')}</button>`;
-  document.getElementById('toast').appendChild(el);
+function vTrash(){
+  head(t('nav.trash'), t('trash.sub'));
+  view().innerHTML = `<div class="card"><table>
+    <thead><tr><th>${t('th.name')}</th><th>${t('th.deals')}</th><th>${t('trash.at')}</th><th></th></tr></thead>
+    <tbody>${trashRows()}</tbody></table>${db.trash.length?'':'<div class="empty">'+t('trash.empty')+'</div>'}</div>`;
 }
-function clearUndo(){
-  undoBuf = null;
-  const el = document.getElementById('undo-bar'); if(el) el.remove();
+function trashRows(){
+  return db.trash.map(x=>`<tr>
+    <td><b>${esc(x.name)}</b></td>
+    <td class="num">${x.deals}</td>
+    <td class="muted">${esc(x.at)}</td>
+    <td style="text-align:right">
+      <button class="sm primary" onclick="restoreTrash('${x.id}')">${t('trash.restore')}</button>
+      <button class="sm ghost danger" onclick="purgeTrash('${x.id}')">${t('trash.purge')}</button>
+    </td></tr>`).join('');
 }
-function undoDeleteCompany(){
-  const u = undoBuf; if(!u) return;
-  clearTimeout(undoTimer);
-  /* restore parent → child so FK order is satisfied; same ids as before */
-  db.companies.unshift(u.company);
-  for(const r of u.deals)    db.deals.unshift(r);
-  for(const r of u.quotes)   db.quotes.unshift(r);
-  for(const r of u.invoices) db.invoices.unshift(r);
-  for(const r of u.subs)     db.subs.unshift(r);
-  for(const r of u.payments) db.payments.unshift(r);
-  clearUndo();
-  toast(t('toast.undo')); save(); route();
+function restoreTrash(id){
+  const x = byId(db.trash,id); if(!x) return;
+  db.companies.unshift(x.snapshot.company);
+  for(const r of x.snapshot.deals)    db.deals.unshift(r);
+  for(const r of x.snapshot.quotes)   db.quotes.unshift(r);
+  for(const r of x.snapshot.invoices) db.invoices.unshift(r);
+  for(const r of x.snapshot.subs)     db.subs.unshift(r);
+  for(const r of x.snapshot.payments) db.payments.unshift(r);
+  db.trash = db.trash.filter(y=>y.id!==id);
+  toast(t('trash.restored')); save(); route();
+}
+function purgeTrash(id){
+  const x = byId(db.trash,id); if(!x) return;
+  if(!confirm(t('confirm.purgeTrash', x.name))) return;
+  db.trash = db.trash.filter(y=>y.id!==id);
+  toast(t('trash.purged')); save(); route();
 }
 
 /* ---------------- quotes ---------------- */
@@ -1668,6 +1703,7 @@ const ROUTES = [
   [/^#\/profile$/, vProfile],
   [/^#\/users$/, vUsers],
   [/^#\/portal\/?(.*)$/, vPortal],
+  [/^#\/trash$/, vTrash],
 ];
 function route(){
   const h = location.hash || '#/dashboard';
