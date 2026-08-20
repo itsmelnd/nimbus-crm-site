@@ -1249,7 +1249,11 @@ async function emailLoad(){
     return;
   }
   let list = null;
-  try{ const r = await (await fetch(emailUrl + '/api/emails?limit=20')).json(); list = r.emails || []; }
+  try{
+    const r = await (await fetch(emailUrl + '/api/emails?limit=20')).json();
+    if(!r.ok) throw new Error(r.error || 'load failed');
+    list = r.emails || [];
+  }
   catch(e){ box.insertAdjacentHTML('beforeend', `<div class="empty">${t('email.loadFailed', e.message)}</div>`); return; }
   box.insertAdjacentHTML('beforeend', `<h3 style="margin:14px 0 8px">${t('email.inbox')}</h3>` +
     (list.length ? `<table><tbody>${list.map(m=>`<tr class="${m.seen?'':'unseen'}" style="cursor:pointer" onclick="emailOpen(${m.uid})">
