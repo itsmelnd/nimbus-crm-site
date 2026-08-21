@@ -566,9 +566,13 @@ async function doSync(){
   for(const t of [...ORDER].reverse()){
     const cur = db[t]||[], b = base[t]||[];
     const cIds = new Set(cur.map(r=>r.id));
-    const del = b.filter(r=>!cIds.has(r.id)).map(r=>r.id);
+    let del = b.filter(r=>!cIds.has(r.id)).map(r=>r.id);
+    /* safety net: never wipe an entire table unless a cascade/trash/restore
+       just happened (protects against a stale/empty in-memory db wiping real data) */
+    if(del.length && del.length === b.length && !cascadeTouched) del = [];
     if(del.length) await sb.from(TBL[t].db).delete().in('id', del);
   }
+  cascadeTouched = false;
   await sb.from('meta').upsert([
     {key:'clock', value:{d:db.clock}},
     {key:'seq', value:db.seq},
@@ -716,6 +720,7 @@ let rtChannel = null, rtJoined = false;
 let undoMap = {};   /* companyId -> cascade snapshot + countdown (row shows Ångra) */
 let undoClock = null;   /* 1s interval driving the countdown and the trash move */
 let suppressLoad = false;   /* skip reconnect reloads while a cascade/trash sync is in flight */
+let cascadeTouched = false;   /* a cascade→trash/restore just changed data: full-table deletes are legitimate */
 let restoredIds = {};   /* tbl -> Set(ids) recently restored (ignore late DELETE echoes of our own cascade) */
 function subscribeRealtime(){
   if(!sb || !ME || rtChannel) return;
@@ -1225,6 +1230,7 @@ function trashCompany(id){
     at: iso(today()) + ' ' + new Date().toTimeString().slice(0,5),
     name:u.company.name, deals:u.deals.length,
     snapshot:{company:u.company, deals:u.deals, quotes:u.quotes, invoices:u.invoices, subs:u.subs, payments:u.payments}});
+  cascadeTouched = true;   /* the upcoming sync legitimately deletes those rows */
   suppressLoad = true;   /* local state is ahead of the DB until the sync lands */
   save(); route();
 }
@@ -1265,6 +1271,7 @@ function restoreTrash(id){
   markRestored('subs',x.snapshot.subs);
   markRestored('payments',x.snapshot.payments);
   db.trash = db.trash.filter(y=>y.id!==id);
+  cascadeTouched = true;   /* the upcoming sync legitimately re-inserts those rows */
   suppressLoad = true;   /* local state is ahead of the DB until the sync lands */
   toast(t('trash.restored')); save(); route();
 }
