@@ -68,7 +68,7 @@ en: {
   'field.name':'Name',
   'toast.companyCreated':'Customer added.','toast.companyUpdated':'Customer updated.','toast.companyDeleted':'Customer deleted.','toast.undo':'Done — everything restored.',
   'list.search':'Search…','list.all':'All statuses','list.none':'No matches.',
-  'btn.newCompany':'New company customer','btn.newPerson':'New private customer','btn.edit':'Edit','btn.print':'Print',
+  'btn.newCompany':'New company customer','btn.newPerson':'New private customer','btn.edit':'Edit','btn.print':'Print','btn.preview':'Preview','btn.viewQuote':'View quote',
   'th.industry':'Industry','th.deals':'Deals','th.value':'Value','th.name':'Name',
   'doc.invoice':'Invoice %s','doc.due':'Due %s',
   'confirm.delDeal':'Delete deal "%s"? (demo data only)',
@@ -224,7 +224,7 @@ sv: {
   'field.name':'Namn',
   'toast.companyCreated':'Kund tillagd.','toast.companyUpdated':'Kund uppdaterad.','toast.companyDeleted':'Kund borttagen.','toast.undo':'Klart — allt återställt.',
   'list.search':'Sök…','list.all':'Alla statusar','list.none':'Inga träffar.',
-  'btn.newCompany':'Ny företagskund','btn.newPerson':'Ny privatkund','btn.edit':'Ändra','btn.print':'Skriv ut',
+  'btn.newCompany':'Ny företagskund','btn.newPerson':'Ny privatkund','btn.edit':'Ändra','btn.print':'Skriv ut','btn.preview':'Förhandsvisa','btn.viewQuote':'Visa offert',
   'th.industry':'Bransch','th.deals':'Affärer','th.value':'Värde','th.name':'Namn',
   'doc.invoice':'Faktura %s','doc.due':'Förfaller %s',
   'confirm.delDeal':'Ta bort affären "%s"? (endast demodata)',
@@ -1520,7 +1520,8 @@ function vQuote(id){
       <div class="card"><div class="hd"><h2>${t('quote.invFrom')}</h2></div>
         ${invs.length?`<table><tbody>${invs.map(i=>`<tr>
           <td class="mono link" onclick="go('#/invoices')">${i.no}</td><td>${esc(t(i.label))}</td>
-          <td>${tag(invStatus(i))}</td><td class="num">${money(i.amount)}</td></tr>`).join('')}</tbody></table>`
+          <td>${tag(invStatus(i))}</td><td class="num">${money(i.amount)}</td>
+          <td style="text-align:right"><button class="sm" onclick="viewInvoice('${i.id}')">${t('btn.preview')}</button></td></tr>`).join('')}</tbody></table>`
           :`<div class="empty">${t('quote.noneYet')}${q.status==='Accepted'?adminOnly('<br><button class="sm primary" style="margin-top:10px" data-id="'+q.id+'" onclick="makeInvoices(this.dataset.id)">'+t('btn.genInv')+'</button>'):''}</div>`}
       </div>
     </div>
@@ -1667,6 +1668,7 @@ function invoiceRows(){
       <td class="num">${money(i.amount)}</td>
       <td class="num">${paidOf(i)?money(paidOf(i)):'<span class="muted">—</span>'}</td>
       <td style="text-align:right">
+        <button class="sm" onclick="previewQuoteOf('${i.id}')">${t('btn.viewQuote')}</button>
         <button class="sm" onclick="emailInvoice('${i.id}')">📧 ${t('email.send')}</button>
         <button class="sm" onclick="viewInvoice('${i.id}')">${t('btn.print')}</button>
         ${adminOnly((i.status==='Draft'?`<button class="sm" onclick="sendInvoice('${i.id}')">${t('btn.send')}</button>`:'') + (i.status!=='Paid'?`<button class="sm primary" onclick="payInvoice('${i.id}')">${t('btn.takePay')}</button>`:''))}
@@ -1697,8 +1699,17 @@ function invoiceDoc(i){
 }
 function viewInvoice(id){
   const i=byId(db.invoices,id); if(!i) return;
+  const q = i.quoteId && byId(db.quotes,i.quoteId);
   modal({title:t('doc.invoice', i.no), wide:true, ok:'',
     body:`<div class="print-area">${invoiceDoc(i)}</div>
+      <div style="margin-top:12px;text-align:right">${q?`<button type="button" class="sm" onclick="previewQuoteOf('${i.id}')">${t('btn.viewQuote')}</button> `:''}<button type="button" class="primary" onclick="window.print()">${t('btn.print')}</button></div>`});
+}
+function previewQuoteOf(id){
+  const i=byId(db.invoices,id); if(!i) return;
+  const q = i.quoteId && byId(db.quotes,i.quoteId);
+  if(!q){ toast(t('quote.noneYet')); return; }
+  modal({title:t('doc.offer', q.no), wide:true, ok:'',
+    body:`<div class="print-area">${quoteDoc(q)}</div>
       <div style="margin-top:12px;text-align:right"><button type="button" class="primary" onclick="window.print()">${t('btn.print')}</button></div>`});
 }
 function sendInvoice(id){
