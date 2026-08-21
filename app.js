@@ -1445,7 +1445,7 @@ function quoteRows(){
     <td class="num muted">${invoicesOf(q.id).length||'—'}</td>
     <td style="text-align:right">
       ${adminOnly((q.status==='Draft'?`<button class="sm primary" onclick="sendQuote('${q.id}')">${t('btn.send')}</button>`:'') + (q.status==='Sent'?`<button class="sm" onclick="acceptQuote('${q.id}')">${t('btn.markAccept')}</button>`:''))}
-      <button class="sm" onclick="go('#/quote/${q.id}')">${t('btn.open')}</button>
+      <button class="sm" onclick="go('#/quote/${q.id}')">${t('btn.viewQuote')}</button>
     </td></tr>`).join('');
 }
 function onListInput(tid){
