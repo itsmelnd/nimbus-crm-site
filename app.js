@@ -86,7 +86,7 @@ en: {
   'email.loadFailed':'Could not load email: %s',
   'email.to':'To','email.subject':'Subject','email.body':'Message',
   'email.sent':'Email sent!','email.sendFailed':'Could not send: %s','email.sending':'Sending…',
-  'email.quoteSubject':'Quote %s from Nimbus CRM',
+  'email.quoteSubject':'Quote %s from Nimbus CRM','email.invoiceSubject':'Invoice %s from Nimbus CRM',
   'opt.none':'— none —','alert.client':'Enter a contact person name.',
   'quotes.sub':'Draft → Sent → Accepted. Accepting a quote can generate invoices automatically.',
   'th.number':'Number','th.client':'Client','th.status':'Status','th.created':'Created','th.valid':'Valid until','th.method':'Method',
@@ -242,7 +242,7 @@ sv: {
   'email.loadFailed':'Kunde inte hämta e-post: %s',
   'email.to':'Till','email.subject':'Ämne','email.body':'Meddelande',
   'email.sent':'E-post skickad!','email.sendFailed':'Kunde inte skicka: %s','email.sending':'Skickar…',
-  'email.quoteSubject':'Offert %s från Nimbus CRM',
+  'email.quoteSubject':'Offert %s från Nimbus CRM','email.invoiceSubject':'Faktura %s från Nimbus CRM',
   'opt.none':'— ingen —','alert.client':'Ange en kontaktperson.',
   'quotes.sub':'Utkast → Skickad → Accepterad. Att acceptera en offert kan generera fakturor automatiskt.',
   'th.number':'Nummer','th.client':'Kund','th.status':'Status','th.created':'Skapad','th.valid':'Giltig till','th.method':'Metod',
@@ -1323,7 +1323,7 @@ async function emailOpen(uid){
     <div class="muted" style="margin-bottom:10px">${esc(m.from)} · ${esc((m.date||'').slice(0,10))}</div>
     ${m.text ? `<pre style="white-space:pre-wrap;font:inherit;margin:0">${esc(m.text)}</pre>` : `<div>${m.html||''}</div>`}`});
 }
-function emailSendModal(to, subject, html, onSent){
+function emailSendModal(to, subject, html, onSent, pdfData){
   modal({title:t('email.send'), wide:true, body:`
     <div class="row">
       <div class="field"><label>${t('email.to')}</label><input name="to" type="email" value="${esc(to||'')}" required></div>
@@ -1331,7 +1331,8 @@ function emailSendModal(to, subject, html, onSent){
     </div>
     <div class="row">
       <div class="field"><label>${t('email.body')}</label><textarea name="body" rows="12" style="width:100%">${esc(html||'')}</textarea></div>
-    </div>`,
+    </div>
+    ${pdfData ? `<div class="muted" style="font-size:12.5px">📎 ${esc(t(pdfData.type==='invoice'?'doc.invoice':'doc.offer', pdfData.no))}.pdf</div>` : ''}`,
     ok:t('email.send'),
     onSubmit: async (d) => {
       if(!d.to || !d.subject) return false;
@@ -1339,7 +1340,7 @@ function emailSendModal(to, subject, html, onSent){
       if(btn){ btn.disabled = true; btn.textContent = t('email.sending'); }
       try{
         const r = await (await fetch(emailUrl + '/api/send', {method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({to:d.to, subject:d.subject, html:d.body})})).json();
+          body: JSON.stringify({to:d.to, subject:d.subject, html:d.body, pdf: pdfData || undefined})})).json();
         if(!r.ok) throw new Error(r.error || 'send failed');
         toast(t('email.sent'));
         if(onSent) onSent();
@@ -1363,12 +1364,35 @@ function emailQuote(id){
     <p><b>Totalt: ${money(quoteTotal(q))}</b> (moms ${q.tax}%)</p>
     <p>Giltig till ${fmtDate(q.valid)}.</p>
   </div>`;
+  const pdf = {
+    type:'quote', no:q.no, company:company(q.companyId), contactName:person(q),
+    lang, currency:curr, rate:rateOf(curr), tax:q.tax,
+    created:fmtDate(q.created), valid:fmtDate(q.valid),
+    items:q.items.map(i=>({desc:i.desc, qty:i.qty, price:i.price})),
+  };
   emailSendModal(q.contactEmail || '', t('email.quoteSubject', q.no), html, () => {
     q.status = 'Sent';
     logIt('quote','log.quoteSent', q.no, person(q));
     logIt('auto','log.followup', q.no, fmtDate(days(today(),3)));
     save(); route();
-  });
+  }, pdf);
+}
+function emailInvoice(id){
+  const i = byId(db.invoices,id); if(!i) return;
+  const html = `<div style="font-family:system-ui,sans-serif;max-width:600px">
+    <h2>${esc(t('doc.invoice', i.no))}</h2>
+    <p>Hej ${esc(person(i))},</p>
+    <p>Här är fakturan <b>${esc(i.no)}</b> från ${esc(company(i.companyId))}.</p>
+    <p><b>Belopp: ${money(i.amount)}</b> — förfaller ${fmtDate(i.due)}.</p>
+    <p>Fakturan bifogas som PDF.</p>
+  </div>`;
+  const pdf = {
+    type:'invoice', no:i.no, company:company(i.companyId), contactName:person(i),
+    lang, currency:curr, rate:rateOf(curr),
+    amount:i.amount, paid:paidOf(i), issued:fmtDate(i.issued), due:fmtDate(i.due),
+    status:invStatus(i) === 'Overdue' ? t('st.Overdue') : t('st.'+invStatus(i)),
+  };
+  emailSendModal(i.contactEmail || '', t('email.invoiceSubject', i.no), html, null, pdf);
 }
 
 /* ---------------- quotes ---------------- */
@@ -1636,6 +1660,7 @@ function invoiceRows(){
       <td class="num">${money(i.amount)}</td>
       <td class="num">${paidOf(i)?money(paidOf(i)):'<span class="muted">—</span>'}</td>
       <td style="text-align:right">
+        <button class="sm" onclick="emailInvoice('${i.id}')">📧 ${t('email.send')}</button>
         <button class="sm" onclick="viewInvoice('${i.id}')">${t('btn.print')}</button>
         ${adminOnly((i.status==='Draft'?`<button class="sm" onclick="sendInvoice('${i.id}')">${t('btn.send')}</button>`:'') + (i.status!=='Paid'?`<button class="sm primary" onclick="payInvoice('${i.id}')">${t('btn.takePay')}</button>`:''))}
       </td></tr>`;
