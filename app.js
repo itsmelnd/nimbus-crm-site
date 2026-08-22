@@ -18,7 +18,12 @@ en: {
   'app.title':'Nimbus CRM — Demo',
   'nav.dashboard':'Dashboard','nav.pipeline':'Pipeline','nav.companies':'Customer list',
   'nav.quotes':'Offers & Quotes','nav.invoices':'Invoices',
-  'nav.payments':'Payments','nav.automation':'Automation log','nav.portal':'Client portal preview','nav.email':'Email',
+  'nav.payments':'Payments','nav.automation':'Automation log','nav.portal':'Client portal preview','nav.email':'Email','nav.tasks':'Tasks',
+  'task.sub':'Reminders linked to customers and deals.','task.new':'New task','task.title':'Title','task.due':'Due','task.done':'Done','task.open':'Open tasks',
+  'task.empty':'No tasks yet.','task.created':'Task created.','task.updated':'Task updated.','task.deleted':'Task deleted.',
+  'task.overdue':'Overdue','task.today':'Today','task.allDone':'All tasks done 🎉',
+  'confirm.delTask':'Delete task "%s"?',
+  'notif.invoice':'Invoice %s is overdue','notif.deal':'Deal "%s" passed its expected close',
   'grp.sales':'Sales','grp.revenue':'Revenue','grp.system':'System',
   'side.demo':'Demo build — data lives in your Supabase database. No real emails, no real payments.',
   'side.reset':'Reset demo data',
@@ -175,7 +180,12 @@ sv: {
   'app.title':'Nimbus CRM – Demo',
   'nav.dashboard':'Översikt','nav.pipeline':'Pipeline','nav.companies':'Kundlista',
   'nav.quotes':'Offerter','nav.invoices':'Fakturor',
-  'nav.payments':'Betalningar','nav.automation':'Automatiseringslogg','nav.portal':'Kundportal','nav.email':'E-post',
+  'nav.payments':'Betalningar','nav.automation':'Automatiseringslogg','nav.portal':'Kundportal','nav.email':'E-post','nav.tasks':'Uppgifter',
+  'task.sub':'Påminnelser kopplade till kunder och affärer.','task.new':'Ny uppgift','task.title':'Titel','task.due':'Förfaller','task.done':'Klar','task.open':'Öppna uppgifter',
+  'task.empty':'Inga uppgifter ännu.','task.created':'Uppgift skapad.','task.updated':'Uppgift uppdaterad.','task.deleted':'Uppgift borttagen.',
+  'task.overdue':'Förfallen','task.today':'Idag','task.allDone':'Alla uppgifter är klara 🎉',
+  'confirm.delTask':'Ta bort uppgiften "%s"?',
+  'notif.invoice':'Faktura %s är förfallen','notif.deal':'Affären "%s" passerade förväntad stängning',
   'grp.sales':'Försäljning','grp.revenue':'Intäkter','grp.system':'System',
   'side.demo':'Demoversion — data ligger i din Supabase-databas. Inga riktiga mejl, inga riktiga betalningar.',
   'side.reset':'Återställ demodata',
@@ -514,6 +524,7 @@ function seed(){
     ],
     log: [],
     trash: [],
+    tasks: [],
     seq: {q:1044,i:2044}
   };
   d.log = [
@@ -543,6 +554,7 @@ const TBL = {
   payments:{db:'payments', map:{invoiceId:'invoice_id', companyId:'company_id'}},
   log:{db:'log', map:{}},
   trash:{db:'trash', map:{companyId:'company_id'}},
+  tasks:{db:'tasks', map:{companyId:'company_id', dealId:'deal_id'}},
 };
 const REV = Object.fromEntries(Object.entries(TBL).map(([t,v])=>[t, Object.fromEntries(Object.entries(v.map).map(([a,b])=>[b,a]))]));
 const flip = (map,o) => { const r={}; for(const [k,v] of Object.entries(o||{})) r[map[k]||k]=v; return r; };
@@ -609,7 +621,7 @@ async function load(){
     const qs = Object.keys(TBL).map(t=>sb.from(TBL[t].db).select('*'));
     qs.push(sb.from('meta').select('key,value'));
     const rs = await Promise.all(qs);
-    const [companies,deals,quotes,invoices,subs,payments,log,trash,meta] = rs.map(r=>r.data||[]);
+    const [companies,deals,quotes,invoices,subs,payments,log,trash,tasks,meta] = rs.map(r=>r.data||[]);
     if(companies.length || deals.length || meta.length){
       db = {
         companies: companies.map(fromRow('companies')),
@@ -620,6 +632,7 @@ async function load(){
         payments: payments.map(fromRow('payments')),
         log: log.map(fromRow('log')),
         trash: trash.map(fromRow('trash')),
+        tasks: tasks.map(fromRow('tasks')),
         clock: ((meta.find(m=>m.key==='clock')||{}).value||{}).d || '2026-08-19',
         seq: (meta.find(m=>m.key==='seq')||{}).value || {q:1044,i:2044},
       };
@@ -670,6 +683,44 @@ async function afterLogin(session){
   save(); paintLang(); route(); fetchRates();
   showApp();
   subscribeRealtime();
+  initNotifications();
+}
+/* browser notifications: overdue invoices + deals past their expected close */
+let notifReady = false;
+function initNotifications(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission === 'default'){
+    Notification.requestPermission().then(p => { try{ localStorage.setItem('nimbus-notif', p); }catch(e){} });
+  }
+  if(Notification.permission === 'granted'){
+    notifReady = true;
+    setInterval(maybeNotify, 60000);
+    setTimeout(maybeNotify, 4000);
+  }
+}
+function maybeNotify(){
+  if(!notifReady || !sb || !ME || !('Notification' in window) || Notification.permission !== 'granted') return;
+  let notified = [];
+  try{ notified = JSON.parse(localStorage.getItem('nimbus-notified') || '[]'); }catch(e){}
+  const open = [];
+  for(const i of db.invoices){
+    if(i.status !== 'Paid' && i.status !== 'Void' && i.due && i.due < iso(today()))
+      open.push({id:'inv_'+i.id, title:t('notif.invoice', i.no), body:company(i.companyId) || ''});
+  }
+  for(const d of db.deals){
+    if(!['Won','Lost'].includes(d.stage) && d.close && d.close < iso(today()))
+      open.push({id:'deal_'+d.id, title:t('notif.deal', d.title), body:company(d.companyId) || ''});
+  }
+  const current = open.map(o=>o.id);
+  const fresh = open.filter(o=>!notified.includes(o.id));
+  for(const o of fresh){
+    try{
+      const n = new Notification(o.title, {body:o.body, tag:o.id});
+      n.onclick = () => { window.focus(); };
+    }catch(e){}
+  }
+  notified = notified.filter(id=>current.includes(id)).concat(fresh.map(o=>o.id)).slice(-100);
+  try{ localStorage.setItem('nimbus-notified', JSON.stringify(notified)); }catch(e){}
 }
 function showLogin(){
   document.getElementById('login').style.display = 'flex';
@@ -889,6 +940,7 @@ function vDashboard(){
   const collected = db.payments.reduce((s,p)=>s+p.amount,0);
   const mrr = db.subs.filter(s=>s.status==='Active')
                      .reduce((s,x)=>s + (x.cycle==='Yearly'? x.amount/12 : x.cycle==='Quarterly'? x.amount/3 : x.amount),0);
+  const openTasks = db.tasks.filter(x=>!x.done).sort((a,b)=>a.due.localeCompare(b.due));
 
   head(t('nav.dashboard'), t('dash.sub', fmtDate(iso(today())), db.companies.length, open.length),
     adminOnly(`<button onclick="runAutomations()">${t('btn.runAuto')}</button>
@@ -915,6 +967,14 @@ function vDashboard(){
     ${kpi(t('kpi.col'), money(collected), t('kpi.col.d'))}
     ${kpi(t('kpi.mrr'), money(mrr), t('kpi.mrr.d', db.subs.filter(s=>s.status==='Active').length))}
   </div>
+
+  ${openTasks.length?`<div class="card" style="margin-bottom:16px">
+    <div class="hd"><h2>${t('nav.tasks')}</h2><div class="right"><a class="btn sm" href="#/tasks">${t('btn.open')}</a></div></div>
+    <table><tbody>${openTasks.slice(0,5).map(x=>`<tr>
+      <td style="width:36px"><input type="checkbox" onclick="toggleTask('${x.id}')" title="${t('task.done')}"></td>
+      <td><b>${esc(x.title)}</b>${taskRef(x)?` <span class="muted" style="font-size:12px">· ${taskRef(x)}</span>`:''}</td>
+      <td class="num">${dueBadge(x.due)}</td></tr>`).join('')}</tbody></table>
+  </div>`:''}
 
   <div class="split">
     <div class="card">
@@ -1333,6 +1393,93 @@ function restoreTrash(id){
   cascadeTouched = true;   /* the upcoming sync legitimately re-inserts those rows */
   suppressLoad = true;   /* local state is ahead of the DB until the sync lands */
   toast(t('trash.restored')); save(); route();
+}
+/* ---------------- tasks / to-dos ---------------- */
+function vTasks(){
+  head(t('nav.tasks'), t('task.sub'), adminOnly(`<button class="primary" onclick="newTask()">${t('task.new')}</button>`));
+  const open = db.tasks.filter(x=>!x.done).sort((a,b)=>a.due.localeCompare(b.due));
+  const done = db.tasks.filter(x=>x.done);
+  view().innerHTML = `<div class="card">${open.length
+    ? `<div class="hd"><h2>${t('task.open')}</h2></div>${taskList(open)}`
+    : `<div class="empty">${t('task.empty')}</div>`}
+    ${done.length?`<div class="hd" style="margin-top:18px"><h2>${t('task.done')}</h2></div>${taskList(done)}`:''}
+  </div>`;
+}
+function taskList(list){
+  return `<table><tbody>${list.map(x=>`<tr class="${x.done?'muted':''}">
+    <td style="width:36px"><input type="checkbox" ${x.done?'checked':''} onclick="toggleTask('${x.id}')" title="${t('task.done')}"></td>
+    <td><b>${esc(x.title)}</b>${taskRef(x)?`<div class="muted" style="font-size:12px">${taskRef(x)}</div>`:''}</td>
+    <td class="num">${dueBadge(x.due)}</td>
+    <td style="text-align:right">${adminOnly(`<button class="sm" onclick="editTask('${x.id}')">${t('btn.edit')}</button>
+      <button class="sm ghost danger" onclick="delTask('${x.id}')">${t('btn.delete')}</button>`)}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+function taskRef(x){
+  const parts = [];
+  if(x.dealId){ const d = byId(db.deals,x.dealId); if(d) parts.push(`<span class="link" onclick="go('#/pipeline')">${esc(d.title)}</span>`); }
+  if(x.companyId){ const c = byId(db.companies,x.companyId); if(c) parts.push(`<span class="link" onclick="go('#/customer/${c.id}')">${esc(c.name)}</span>`); }
+  return parts.join(' · ');
+}
+function dueBadge(due){
+  const cls = due < today() ? 't-red' : due === today() ? 't-amber' : 't-grey';
+  const label = due < today() ? t('task.overdue') : due === today() ? t('task.today') : fmtDate(due);
+  return `<span class="tag ${cls}">${label}</span>`;
+}
+function taskCustomerOptions(sel){ return `<option value="">${t('opt.none')}</option>` + customerOptions(sel); }
+function taskDealOptions(sel){ return `<option value="">${t('opt.none')}</option>` + db.deals.map(d=>`<option value="${d.id}" ${d.id===sel?'selected':''}>${esc(d.title)}</option>`).join(''); }
+function newTask(companyId){
+  modal({title:t('task.new'), body:`
+    <div class="row">
+      <div class="field"><label>${t('task.title')}</label><input name="title" required placeholder="Ring kunden på fredag"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>${t('field.company')}</label><select name="companyId">${taskCustomerOptions(companyId)}</select></div>
+      <div class="field"><label>${t('th.deals')}</label><select name="dealId">${taskDealOptions()}</select></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>${t('task.due')}</label><input name="due" type="date" value="${days(today(),1)}" required></div>
+    </div>`,
+    ok:t('btn.create'),
+    onSubmit(d){
+      if(!d.title) return false;
+      db.tasks.unshift({id:uid('ts'), title:d.title, companyId:d.companyId||null, dealId:d.dealId||null,
+        due:d.due||days(today(),1), done:false, created:iso(today())});
+      toast(t('task.created'));
+    }});
+}
+function editTask(id){
+  const x = byId(db.tasks,id); if(!x) return;
+  modal({title:t('btn.edit'), body:`
+    <div class="row">
+      <div class="field"><label>${t('task.title')}</label><input name="title" value="${esc(x.title)}" required></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>${t('field.company')}</label><select name="companyId">${taskCustomerOptions(x.companyId)}</select></div>
+      <div class="field"><label>${t('th.deals')}</label><select name="dealId">${taskDealOptions(x.dealId)}</select></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>${t('task.due')}</label><input name="due" type="date" value="${esc(x.due)}" required></div>
+      <div class="field"><label>${t('task.done')}</label><select name="done"><option value="0">${t('task.open')}</option><option value="1" ${x.done?'selected':''}>${t('task.done')}</option></select></div>
+    </div>`,
+    ok:t('btn.save'),
+    onSubmit(d){
+      if(!d.title) return false;
+      x.title = d.title; x.companyId = d.companyId||null; x.dealId = d.dealId||null;
+      x.due = d.due; x.done = d.done==='1';
+      toast(t('task.updated'));
+    }});
+}
+function toggleTask(id){
+  const x = byId(db.tasks,id); if(!x) return;
+  x.done = !x.done;
+  toast(x.done ? t('task.done') : t('task.updated'));
+  save(); route();
+}
+function delTask(id){
+  const x = byId(db.tasks,id); if(!x) return;
+  if(!confirm(t('confirm.delTask', x.title))) return;
+  db.tasks = db.tasks.filter(y=>y.id!==id);
+  toast(t('task.deleted')); save(); route();
 }
 function purgeTrash(id){
   const x = byId(db.trash,id); if(!x) return;
@@ -2057,6 +2204,7 @@ const ROUTES = [
   [/^#\/portal\/?(.*)$/, vPortal],
   [/^#\/trash$/, vTrash],
   [/^#\/email$/, vEmail],
+  [/^#\/tasks$/, vTasks],
 ];
 function route(){
   const h = location.hash || '#/dashboard';
