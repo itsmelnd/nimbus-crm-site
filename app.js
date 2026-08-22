@@ -87,6 +87,7 @@ en: {
   'email.to':'To','email.subject':'Subject','email.body':'Message',
   'email.sent':'Email sent!','email.sendFailed':'Could not send: %s','email.sending':'Sending…',
   'email.quoteSubject':'Quote %s from Nimbus CRM','email.invoiceSubject':'Invoice %s from Nimbus CRM',
+  'customer.back':'← Customer list','customer.noDeals':'No deals yet.','customer.noQuotes':'No quotes.','customer.noInvoices':'No invoices.','customer.noPayments':'No payments.','customer.noSubs':'No subscriptions.','customer.subs':'Subscriptions','customer.openVal':'%s open pipeline',
   'opt.none':'— none —','alert.client':'Enter a contact person name.',
   'quotes.sub':'Draft → Sent → Accepted. Accepting a quote can generate invoices automatically.',
   'th.number':'Number','th.client':'Client','th.status':'Status','th.created':'Created','th.valid':'Valid until','th.method':'Method',
@@ -243,6 +244,7 @@ sv: {
   'email.to':'Till','email.subject':'Ämne','email.body':'Meddelande',
   'email.sent':'E-post skickad!','email.sendFailed':'Kunde inte skicka: %s','email.sending':'Skickar…',
   'email.quoteSubject':'Offert %s från Nimbus CRM','email.invoiceSubject':'Faktura %s från Nimbus CRM',
+  'customer.back':'← Kundlistan','customer.noDeals':'Inga affärer ännu.','customer.noQuotes':'Inga offerter.','customer.noInvoices':'Inga fakturor.','customer.noPayments':'Inga betalningar.','customer.noSubs':'Inga prenumerationer.','customer.subs':'Prenumerationer','customer.openVal':'%s i öppen pipeline',
   'opt.none':'— ingen —','alert.client':'Ange en kontaktperson.',
   'quotes.sub':'Utkast → Skickad → Accepterad. Att acceptera en offert kan generera fakturor automatiskt.',
   'th.number':'Nummer','th.client':'Kund','th.status':'Status','th.created':'Skapad','th.valid':'Giltig till','th.method':'Metod',
@@ -1123,7 +1125,7 @@ function customerRows(){
     const u = undoMap[c.id];
     const meta = isPersonCust(c) ? esc(c.email||'—') : esc(c.industry||'—');
     return `<tr class="${u?'undoing':''}">
-      <td><b>${esc(c.name)}</b></td>
+      <td><b class="link" onclick="go('#/customer/${c.id}')">${esc(c.name)}</b></td>
       <td>${meta}</td>
       <td class="num">${ds.length}</td>
       <td class="num">${money(val)}</td>
@@ -1180,6 +1182,63 @@ function editCompany(id){
       else c.industry = d.industry||null;
       toast(t('toast.companyUpdated'));
     }});
+}
+/* customer detail: everything about one customer on a single page */
+function vCustomer(id){
+  const c = byId(db.companies,id); if(!c) return notFound();
+  const ds  = db.deals.filter(d=>d.companyId===id);
+  const qs  = db.quotes.filter(q=>q.companyId===id);
+  const ivs = db.invoices.filter(i=>i.companyId===id);
+  const pms = db.payments.filter(p=>p.companyId===id);
+  const subs= db.subs.filter(s=>s.companyId===id);
+  const val = ds.filter(d=>!['Won','Lost'].includes(d.stage)).reduce((s,d)=>s+d.value,0);
+  head(c.name,
+    `${isPersonCust(c)?t('customers.private'):t('customers.company')} · ${esc(isPersonCust(c)?(c.email||'—'):(c.industry||'—'))}`,
+    `<a class="btn" href="#/portal/${c.id}">${t('btn.clientView')}</a> ` +
+    adminOnly(`<button class="primary" onclick="newDeal('${c.id}')">${t('btn.newDeal')}</button>`));
+  view().innerHTML = `
+  <a class="btn sm ghost" href="#/companies">${t('customer.back')}</a>
+  <div class="grid kpis" style="margin:14px 0">
+    ${kpi(t('th.deals'), ds.length, t('customer.openVal', money(val)))}
+    ${kpi(t('nav.quotes'), qs.length, t('quote.invFrom'))}
+    ${kpi(t('nav.invoices'), ivs.length, t('nav.payments'))}
+    ${kpi(t('nav.payments'), money(pms.reduce((s,p)=>s+p.amount,0)), t('customer.subs'))}
+  </div>
+  <div class="split" style="align-items:start">
+    <div class="card"><div class="hd"><h2>${t('th.deals')}</h2><div class="right"><a class="btn sm" href="#/pipeline">${t('btn.openBoard')}</a></div></div>
+      ${ds.length?`<table><tbody>${ds.map(d=>`<tr style="cursor:pointer" onclick="go('#/pipeline')">
+        <td><b>${esc(d.title)}</b></td><td>${tag(d.stage)}</td><td class="num">${money(d.value)}</td>
+        <td class="muted">${t('attn.expected', fmtDate(d.close))}</td></tr>`).join('')}</tbody></table>`
+      :`<div class="empty">${t('customer.noDeals')}</div>`}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card"><div class="hd"><h2>${t('nav.quotes')}</h2></div>
+        ${qs.length?`<table><tbody>${qs.map(q=>`<tr>
+          <td class="mono link" onclick="go('#/quote/${q.id}')">${q.no}</td><td>${tag(q.status)}</td>
+          <td class="num">${money(quoteTotal(q))}</td></tr>`).join('')}</tbody></table>`
+        :`<div class="empty">${t('customer.noQuotes')}</div>`}
+      </div>
+      <div class="card"><div class="hd"><h2>${t('nav.invoices')}</h2></div>
+        ${ivs.length?`<table><tbody>${ivs.map(i=>`<tr>
+          <td class="mono">${i.no}</td><td>${tag(invStatus(i))}</td>
+          <td class="num">${money(i.amount)}</td>
+          <td style="text-align:right"><button class="sm" onclick="viewInvoice('${i.id}')">${t('btn.preview')}</button></td></tr>`).join('')}</tbody></table>`
+        :`<div class="empty">${t('customer.noInvoices')}</div>`}
+      </div>
+      <div class="card"><div class="hd"><h2>${t('nav.payments')}</h2></div>
+        ${pms.length?`<table><tbody>${pms.map(p=>`<tr>
+          <td class="muted">${fmtDate(p.date)}</td><td>${esc(p.method||'—')}</td>
+          <td class="num">${money(p.amount)}</td></tr>`).join('')}</tbody></table>`
+        :`<div class="empty">${t('customer.noPayments')}</div>`}
+      </div>
+      <div class="card"><div class="hd"><h2>${t('customer.subs')}</h2></div>
+        ${subs.length?`<table><tbody>${subs.map(s=>`<tr>
+          <td><b>${esc(s.name)}</b></td><td class="num">${money(s.amount)}</td>
+          <td>${tag(s.status)}</td></tr>`).join('')}</tbody></table>`
+        :`<div class="empty">${t('customer.noSubs')}</div>`}
+      </div>
+    </div>
+  </div>`;
 }
 function delCompany(id){
   const c = byId(db.companies,id); if(!c || undoMap[id]) return;
@@ -1337,7 +1396,8 @@ function emailSendModal(to, subject, html, onSent, pdfData){
       <div class="field"><label>${t('email.subject')}</label><input name="subject" value="${esc(subject||'')}" required></div>
     </div>
     <div class="row">
-      <div class="field"><label>${t('email.body')}</label><textarea name="body" rows="12" style="width:100%">${esc(html||'')}</textarea></div>
+      <div class="field"><label>${t('email.body')}</label><textarea name="body" rows="12" style="width:100%">${esc(html||'')}</textarea>
+        <div id="emailsig" class="muted" style="font-size:12.5px;margin-top:8px"></div></div>
     </div>
     ${pdfData ? `<div class="muted" style="font-size:12.5px">📎 ${esc(t(pdfData.type==='invoice'?'doc.invoice':'doc.offer', pdfData.no))}.pdf</div>` : ''}`,
     ok:t('email.send'),
@@ -1358,6 +1418,14 @@ function emailSendModal(to, subject, html, onSent, pdfData){
         return false;
       }
     }});
+  /* show the auto-signature as a preview under the message body */
+  (async () => {
+    try{
+      const r = await (await fetch(emailUrl + '/api/config')).json();
+      const el = document.getElementById('emailsig');
+      if(el && r && r.signature) el.innerHTML = `<span style="opacity:.55">—</span> ${r.signature}`;
+    }catch(e){}
+  })();
 }
 function emailQuote(id){
   const q = byId(db.quotes,id); if(!q) return;
@@ -1980,6 +2048,7 @@ const ROUTES = [
   [/^#\/companies$/, vCompanies],
   [/^#\/quotes$/, vQuotes],
   [/^#\/quote\/(.+)$/, vQuote],
+  [/^#\/customer\/(.+)$/, vCustomer],
   [/^#\/invoices$/, vInvoices],
   [/^#\/payments$/, vPayments],
   [/^#\/automation$/, vAutomation],
