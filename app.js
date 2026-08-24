@@ -80,7 +80,7 @@ en: {
   'doc.invoice':'Invoice %s','doc.due':'Due %s',
   'confirm.delDeal':'Delete deal "%s"? (demo data only)',
   'field.dealName':'Deal name','field.value':'Value','field.stage':'Stage',
-  'field.close':'Expected close','btn.createDeal':'Create deal','toast.dealCreated':'Deal created.',
+  'field.close':'Expected close','btn.createDeal':'Create deal','toast.dealCreated':'Deal created.','toast.dealUpdated':'Deal updated.',
   'deal.newCustomer':'New customer','deal.nameRequired':'Enter a name.','deal.view':'Open deal details','deal.notes':'Notes & details','deal.notesHint':'Write notes, reminders or details about this deal…','deal.notesSaved':'Notes saved.','deal.created':'Created','deal.mail':'Email','deal.call':'Call','deal.noPhone':'No phone number saved for this customer.',
   'field.company':'Customer','field.contactPerson':'Contact person','field.contactEmail':'Contact email',
   'customers.company':'Companies','customers.private':'Private customers','field.email':'Email','field.phone':'Phone',
@@ -244,7 +244,7 @@ sv: {
   'doc.invoice':'Faktura %s','doc.due':'Förfaller %s',
   'confirm.delDeal':'Ta bort affären "%s"? (endast demodata)',
   'field.dealName':'Affärsnamn','field.value':'Värde','field.stage':'Stadie',
-  'field.close':'Förväntad stängning','btn.createDeal':'Skapa affär','toast.dealCreated':'Affär skapad.',
+  'field.close':'Förväntad stängning','btn.createDeal':'Skapa affär','toast.dealCreated':'Affär skapad.','toast.dealUpdated':'Affären uppdaterad.',
   'deal.newCustomer':'Ny kund','deal.nameRequired':'Ange ett namn.','deal.view':'Öppna affärsdetaljer','deal.notes':'Notiser & detaljer','deal.notesHint':'Skriv notiser, påminnelser eller detaljer om affären…','deal.notesSaved':'Notiser sparade.','deal.created':'Skapad','deal.mail':'Maila','deal.call':'Ring','deal.noPhone':'Inget telefonnummer sparat för kunden.',
   'field.company':'Kund','field.contactPerson':'Kontaktperson','field.contactEmail':'E-post',
   'customers.company':'Företagskunder','customers.private':'Privatkunder','field.email':'E-post','field.phone':'Telefon',
@@ -1043,6 +1043,7 @@ function boardHtml(){
         ${d.notes?`<div class="muted" style="font-size:12px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📝 ${esc(d.notes.slice(0,60))}</div>`:''}
         ${adminOnly(`<div class="actions" style="margin-top:8px">
           <button class="sm" onclick="event.stopPropagation();newQuote('${d.id}')">${t('btn.quote')}</button>
+          <button class="sm" title="${t('btn.edit')}" onclick="event.stopPropagation();editDeal('${d.id}')">✏️</button>
           <button class="sm ghost danger" onclick="event.stopPropagation();delDeal('${d.id}')">${t('btn.delete')}</button>
         </div>`)}</div>`).join('')}
     </div>`;
@@ -1081,12 +1082,11 @@ function delDeal(id){
   const d=byId(db.deals,id); if(!d||!confirm(t('confirm.delDeal', d.title))) return;
   db.deals = db.deals.filter(x=>x.id!==id); logIt('deal','log.dealDeleted', d.title); save(); route();
 }
-/* deal detail modal: click anywhere on a pipeline card → info + notes box */
+/* deal detail modal: click anywhere on a pipeline card → read-only info + notes */
 function viewDeal(id){
   const d = byId(db.deals,id); if(!d) return;
   const c = byId(db.companies,d.companyId);
   const qs = db.quotes.filter(q=>q.dealId===id);
-  const isAdminU = !ME || ME.role==='admin';
   modal({title:esc(d.title), wide:true, ok:'', body:`
     <div class="row" style="align-items:start;gap:18px">
       <div style="flex:1;min-width:0">
@@ -1105,22 +1105,13 @@ function viewDeal(id){
         <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
           ${d.contactEmail?`<a class="btn sm" href="mailto:${esc(d.contactEmail)}?subject=${esc(encodeURIComponent('Re: '+d.title))}">📧 ${t('deal.mail')}</a>`:''}
           <button class="sm" onclick="callDealContact('${d.id}')">📞 ${t('deal.call')}</button>
-          ${adminOnly(`<button class="sm" onclick="editDeal('${d.id}')">${t('btn.edit')}</button>
-            <button class="sm ghost danger" onclick="delDeal('${d.id}')">${t('btn.delete')}</button>`)}
         </div>
       </div>
       <div style="flex:1;min-width:0">
         <h3 style="margin:0 0 6px">${t('deal.notes')}</h3>
-        <textarea id="deal-notes" rows="12" style="width:100%" placeholder="${t('deal.notesHint')}" ${isAdminU?'':'readonly'}>${esc(d.notes||'')}</textarea>
-        ${adminOnly(`<div style="margin-top:8px;text-align:right"><button class="sm primary" onclick="saveDealNotes('${d.id}')">${t('btn.save')}</button></div>`)}
+        <textarea id="deal-notes" rows="12" style="width:100%" readonly>${esc(d.notes||'')}</textarea>
       </div>
     </div>`});
-}
-function saveDealNotes(id){
-  const d = byId(db.deals,id); if(!d) return;
-  const el = document.getElementById('deal-notes'); if(!el) return;
-  d.notes = el.value.trim();
-  toast(t('deal.notesSaved')); save(); route();
 }
 function callDealContact(id){
   const d = byId(db.deals,id); if(!d) return;
@@ -1128,6 +1119,36 @@ function callDealContact(id){
   const ph = (c && c.phone) || '';
   if(!ph){ toast(t('deal.noPhone')); return; }
   location.href = 'tel:' + ph;
+}
+/* edit a deal: opened from the ✏️ button on the pipeline card */
+function editDeal(id){
+  const d = byId(db.deals,id); if(!d) return;
+  modal({title:t('btn.edit'), wide:true, body:`
+    <div class="row">
+      <div class="field"><label>${t('field.dealName')}</label><input name="title" value="${esc(d.title)}" required></div>
+      <div class="field"><label>${t('field.value')}</label><input name="value" type="number" min="0" step="100" value="${d.value}" required></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>${t('field.company')}</label><select name="companyId">${customerOptions(d.companyId)}</select></div>
+      <div class="field"><label>${t('field.stage')}</label><select name="stage">${STAGES.map(s=>`<option value="${s}" ${s===d.stage?'selected':''}>${t('st.'+s)}</option>`).join('')}</select></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>${t('field.contactPerson')}</label><input name="contactName" value="${esc(d.contactName||'')}" required></div>
+      <div class="field"><label>${t('field.contactEmail')}</label><input name="contactEmail" type="email" value="${esc(d.contactEmail||'')}"></div>
+      <div class="field"><label>${t('field.close')}</label><input name="close" type="date" value="${d.close}" required></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>${t('deal.notes')}</label><textarea name="notes" rows="5" style="width:100%">${esc(d.notes||'')}</textarea></div>
+    </div>`,
+    ok:t('btn.save'),
+    onSubmit(x){
+      if(!x.title || !x.contactName) return false;
+      const oldStage = d.stage;
+      d.title = x.title; d.value = +x.value||0; d.companyId = x.companyId; d.contactName = x.contactName;
+      d.contactEmail = x.contactEmail||''; d.close = x.close||addMonth(today()); d.notes = (x.notes||'').trim();
+      if(x.stage !== oldStage) setDealStage(d, x.stage);
+      toast(t('toast.dealUpdated')); save(); route();
+    }});
 }
 function newDeal(companyId){
   modal({title:t('btn.newDeal'), body:`
