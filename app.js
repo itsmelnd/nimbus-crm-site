@@ -81,7 +81,7 @@ en: {
   'confirm.delDeal':'Delete deal "%s"? (demo data only)',
   'field.dealName':'Deal name','field.value':'Value','field.stage':'Stage',
   'field.close':'Expected close','btn.createDeal':'Create deal','toast.dealCreated':'Deal created.',
-  'deal.newCustomer':'New customer','deal.nameRequired':'Enter a name.','deal.view':'Open deal details','deal.notes':'Notes & details','deal.notesHint':'Write notes, reminders or details about this deal…','deal.notesSaved':'Notes saved.','deal.created':'Created',
+  'deal.newCustomer':'New customer','deal.nameRequired':'Enter a name.','deal.view':'Open deal details','deal.notes':'Notes & details','deal.notesHint':'Write notes, reminders or details about this deal…','deal.notesSaved':'Notes saved.','deal.created':'Created','deal.mail':'Email','deal.call':'Call','deal.noPhone':'No phone number saved for this customer.',
   'field.company':'Customer','field.contactPerson':'Contact person','field.contactEmail':'Contact email',
   'customers.company':'Companies','customers.private':'Private customers','field.email':'Email','field.phone':'Phone',
   'field.valid':'Valid until','field.total':'Total',
@@ -245,7 +245,7 @@ sv: {
   'confirm.delDeal':'Ta bort affären "%s"? (endast demodata)',
   'field.dealName':'Affärsnamn','field.value':'Värde','field.stage':'Stadie',
   'field.close':'Förväntad stängning','btn.createDeal':'Skapa affär','toast.dealCreated':'Affär skapad.',
-  'deal.newCustomer':'Ny kund','deal.nameRequired':'Ange ett namn.','deal.view':'Öppna affärsdetaljer','deal.notes':'Notiser & detaljer','deal.notesHint':'Skriv notiser, påminnelser eller detaljer om affären…','deal.notesSaved':'Notiser sparade.','deal.created':'Skapad',
+  'deal.newCustomer':'Ny kund','deal.nameRequired':'Ange ett namn.','deal.view':'Öppna affärsdetaljer','deal.notes':'Notiser & detaljer','deal.notesHint':'Skriv notiser, påminnelser eller detaljer om affären…','deal.notesSaved':'Notiser sparade.','deal.created':'Skapad','deal.mail':'Maila','deal.call':'Ring','deal.noPhone':'Inget telefonnummer sparat för kunden.',
   'field.company':'Kund','field.contactPerson':'Kontaktperson','field.contactEmail':'E-post',
   'customers.company':'Företagskunder','customers.private':'Privatkunder','field.email':'E-post','field.phone':'Telefon',
   'field.valid':'Giltig till','field.total':'Totalt',
@@ -1102,7 +1102,9 @@ function viewDeal(id){
         ${qs.length?`<h3 style="margin:16px 0 6px">${t('nav.quotes')}</h3><table><tbody>${qs.map(q=>`<tr>
           <td class="mono link" onclick="go('#/quote/${q.id}')">${q.no}</td><td>${tag(q.status)}</td>
           <td class="num">${money(quoteTotal(q))}</td></tr>`).join('')}</tbody></table>`:''}
-        <div style="margin-top:16px;display:flex;gap:8px">
+        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+          ${d.contactEmail?`<a class="btn sm" href="mailto:${esc(d.contactEmail)}?subject=${esc(encodeURIComponent('Re: '+d.title))}">📧 ${t('deal.mail')}</a>`:''}
+          <button class="sm" onclick="callDealContact('${d.id}')">📞 ${t('deal.call')}</button>
           ${adminOnly(`<button class="sm" onclick="editDeal('${d.id}')">${t('btn.edit')}</button>
             <button class="sm ghost danger" onclick="delDeal('${d.id}')">${t('btn.delete')}</button>`)}
         </div>
@@ -1119,6 +1121,13 @@ function saveDealNotes(id){
   const el = document.getElementById('deal-notes'); if(!el) return;
   d.notes = el.value.trim();
   toast(t('deal.notesSaved')); save(); route();
+}
+function callDealContact(id){
+  const d = byId(db.deals,id); if(!d) return;
+  const c = byId(db.companies,d.companyId);
+  const ph = (c && c.phone) || '';
+  if(!ph){ toast(t('deal.noPhone')); return; }
+  location.href = 'tel:' + ph;
 }
 function newDeal(companyId){
   modal({title:t('btn.newDeal'), body:`
