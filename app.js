@@ -21,7 +21,7 @@ en: {
   'nav.payments':'Payments','nav.automation':'Automation log','nav.portal':'Client portal preview','nav.email':'Email','nav.tasks':'Tasks','nav.lost':'Lost deals',
   'lost.sub':'Deals moved to Lost leave the pipeline after 24h and land here.','lost.empty':'No lost deals.','lost.archived':'Archived','lost.leaves':'Leaves pipeline soon','lost.restored':'Deal restored.','lost.total':'%s total lost','lost.left':'Leaves pipeline in %s h %s min',
   'log.dealLost':'Deal "%s" lost (quote %s rejected)',
-  'task.sub':'Reminders linked to customers and deals.','task.new':'New task','task.title':'Title','task.due':'Due','task.done':'Done','task.open':'Open tasks',
+  'task.sub':'Reminders linked to customers and deals.','task.todo':'To do','task.new':'New task','task.title':'Title','task.due':'Due','task.done':'Done','task.open':'Open tasks',
   'task.empty':'No tasks yet.','task.created':'Task created.','task.updated':'Task updated.','task.deleted':'Task deleted.',
   'task.overdue':'Overdue','task.today':'Today','task.allDone':'All tasks done 🎉',
   'confirm.delTask':'Delete task "%s"?',
@@ -161,7 +161,7 @@ en: {
   'log.invRaised':'Automation: %s raised for subscription "%s" · next cycle %s',
   'log.nothing':'Automation run: nothing to do.','toast.autoFired':'%s automation action(s) fired.',
   'toast.autoDone':'Automations ran — nothing due.','log.clock':'Demo clock advanced %s days → %s',
-  'log.seed.qSent':'Quote %s sent to %s',
+  'log.seed.qSent':'Quote %s sent to %s','auto.overdueTask':'Invoice %s is overdue (%s) — contact the customer.',
   'log.seed.qAccepted':'%s accepted — 3 milestone invoices generated automatically',
   'log.seed.pay':'Payment received: %s · %s',
   'log.seed.qSentFup':'Quote %s sent to %s · follow-up scheduled in 3 days',
@@ -185,7 +185,7 @@ sv: {
   'nav.payments':'Betalningar','nav.automation':'Automatiseringslogg','nav.portal':'Kundportal','nav.email':'E-post','nav.tasks':'Uppgifter','nav.lost':'Förlorade affärer',
   'lost.sub':'Affärer som flyttats till Förlorad lämnar pipelinen efter 24 timmar och hamnar här.','lost.empty':'Inga förlorade affärer.','lost.archived':'Arkiverad','lost.leaves':'Lämnar snart pipelinen','lost.restored':'Affären återställdes.','lost.total':'%s totalt förlorat','lost.left':'Lämnar pipelinen om %s h %s min',
   'log.dealLost':'Affär "%s" förlorad (offert %s avvisad)',
-  'task.sub':'Påminnelser kopplade till kunder och affärer.','task.new':'Ny uppgift','task.title':'Titel','task.due':'Förfaller','task.done':'Klar','task.open':'Öppna uppgifter',
+  'task.sub':'Påminnelser kopplade till kunder och affärer.','task.todo':'Att göra','task.new':'Ny uppgift','task.title':'Titel','task.due':'Förfaller','task.done':'Klar','task.open':'Öppna uppgifter',
   'task.empty':'Inga uppgifter ännu.','task.created':'Uppgift skapad.','task.updated':'Uppgift uppdaterad.','task.deleted':'Uppgift borttagen.',
   'task.overdue':'Förfallen','task.today':'Idag','task.allDone':'Alla uppgifter är klara 🎉',
   'confirm.delTask':'Ta bort uppgiften "%s"?',
@@ -325,7 +325,7 @@ sv: {
   'log.invRaised':'Automatisering: %s utfärdad för prenumeration "%s" · nästa cykel %s',
   'log.nothing':'Automatisering kördes: inget att göra.','toast.autoFired':'%s automatiseringsåtgärder utlöstes.',
   'toast.autoDone':'Automatiseringar kördes — inget förfallet.','log.clock':'Demoklockan flyttades fram %s dagar → %s',
-  'log.seed.qSent':'Offert %s skickad till %s',
+  'log.seed.qSent':'Offert %s skickad till %s','auto.overdueTask':'Faktura %s är förfallen (%s) — kontakta kunden.',
   'log.seed.qAccepted':'%s accepterad — 3 milstensfakturor genererade automatiskt',
   'log.seed.pay':'Betalning mottagen: %s · %s',
   'log.seed.qSentFup':'Offert %s skickad till %s · uppföljning schemalagd om 3 dagar',
@@ -965,6 +965,14 @@ function vDashboard(){
   view().innerHTML = `
   <div class="banner">${t('dash.banner')}</div>
 
+  ${openTasks.length?`<div class="card todo-box" style="margin-bottom:16px">
+    <div class="hd"><h2>📋 ${t('task.todo')} (${openTasks.length})</h2><div class="right"><a class="btn sm" href="#/tasks">${t('btn.open')}</a></div></div>
+    <table><tbody>${openTasks.map(x=>`<tr>
+      <td style="width:36px"><input type="checkbox" onclick="toggleTask('${x.id}')" title="${t('task.done')}"></td>
+      <td><b>${x.auto?'🤖 ':''}${esc(x.title)}</b>${taskRef(x)?` <span class="muted" style="font-size:12px">· ${taskRef(x)}</span>`:''}</td>
+      <td class="num">${dueBadge(x.due)}</td></tr>`).join('')}</tbody></table>
+  </div>`:''}
+
   <div class="grid kpis" style="margin-bottom:16px">
     ${kpi(t('kpi.open'), money(pipeline), t('kpi.open.d', open.length))}
     ${kpi(t('kpi.won'), money(won), t('kpi.won.d'))}
@@ -972,14 +980,6 @@ function vDashboard(){
     ${kpi(t('kpi.col'), money(collected), t('kpi.col.d'))}
     ${kpi(t('kpi.mrr'), money(mrr), t('kpi.mrr.d', db.subs.filter(s=>s.status==='Active').length))}
   </div>
-
-  ${openTasks.length?`<div class="card" style="margin-bottom:16px">
-    <div class="hd"><h2>${t('nav.tasks')}</h2><div class="right"><a class="btn sm" href="#/tasks">${t('btn.open')}</a></div></div>
-    <table><tbody>${openTasks.slice(0,5).map(x=>`<tr>
-      <td style="width:36px"><input type="checkbox" onclick="toggleTask('${x.id}')" title="${t('task.done')}"></td>
-      <td><b>${esc(x.title)}</b>${taskRef(x)?` <span class="muted" style="font-size:12px">· ${taskRef(x)}</span>`:''}</td>
-      <td class="num">${dueBadge(x.due)}</td></tr>`).join('')}</tbody></table>
-  </div>`:''}
 
   <div class="split">
     <div class="card">
@@ -1509,7 +1509,7 @@ function vTasks(){
 function taskList(list){
   return `<table><tbody>${list.map(x=>`<tr class="${x.done?'muted':''}">
     <td style="width:36px"><input type="checkbox" ${x.done?'checked':''} onclick="toggleTask('${x.id}')" title="${t('task.done')}"></td>
-    <td><b>${esc(x.title)}</b>${taskRef(x)?`<div class="muted" style="font-size:12px">${taskRef(x)}</div>`:''}</td>
+    <td><b>${x.auto?'🤖 ':''}${esc(x.title)}</b><div class="muted" style="font-size:12px">${taskRef(x)}</div></td>
     <td class="num">${dueBadge(x.due)}</td>
     <td style="text-align:right">${adminOnly(`<button class="sm" onclick="editTask('${x.id}')">${t('btn.edit')}</button>
       <button class="sm ghost danger" onclick="delTask('${x.id}')">${t('btn.delete')}</button>`)}</td>
@@ -2094,6 +2094,11 @@ function runAutomations(){
   let n=0;
   db.invoices.filter(isOverdue).forEach(i=>{
     logIt('auto','log.reminder', i.no, money(i.amount-paidOf(i)), person(i)); n++;
+    /* in-app reminder: create a to-do task (no email) unless one is already open */
+    const title = t('auto.overdueTask', i.no, money(i.amount-paidOf(i)));
+    const dupe = db.tasks.some(x=>x.title===title && !x.done);
+    if(!dupe) db.tasks.unshift({id:uid('ts'), title, companyId:i.companyId, dealId:null,
+      due:iso(today()), done:false, created:iso(today()), auto:true});
   });
   db.quotes.filter(q=>q.status==='Sent' && q.valid < iso(today())).forEach(q=>{
     q.status='Rejected'; logIt('auto','log.expired', q.no); n++;
