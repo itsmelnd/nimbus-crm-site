@@ -478,6 +478,7 @@ const uid = p => p + '_' + Math.random().toString(36).slice(2,8);
 const today = () => new Date(db.clock);
 const iso = d => new Date(d).toISOString().slice(0,10);
 const days = (d,n) => { const x = new Date(d); x.setDate(x.getDate()+n); return iso(x); };
+const addMonth = d => { const x = new Date(d); x.setMonth(x.getMonth()+1); return iso(x); };
 const fmtDate = s => new Date(s+'T00:00:00').toLocaleDateString(lang==='sv'?'sv-SE':'en-US',{month:'short',day:'numeric',year:'numeric'});
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const init = s => String(s).split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
@@ -1134,13 +1135,13 @@ function newDeal(companyId){
     <div class="row">
       <div class="field"><label>${t('field.contactPerson')} *</label><input name="contactName" required placeholder="Jane Doe"></div>
       <div class="field"><label>${t('field.contactEmail')}</label><input name="contactEmail" type="email" placeholder="jane@example.com"></div>
-      <div class="field"><label>${t('field.close')}</label><input name="close" type="date" value="${days(today(),30)}"></div>
+      <div class="field"><label>${t('field.close')}</label><input name="close" type="date" value="${addMonth(today())}"></div>
     </div>`,
     ok:t('btn.createDeal'),
     onSubmit(d){
       if(!d.title || !d.contactName) return false;
       db.deals.unshift({id:uid('dl'),title:d.title,companyId:d.companyId,contactName:d.contactName,
-        contactEmail:d.contactEmail||'',value:+d.value||0,stage:d.stage,close:d.close||days(today(),30),created:iso(today())});
+        contactEmail:d.contactEmail||'',value:+d.value||0,stage:d.stage,close:d.close||addMonth(today()),created:iso(today())});
       logIt('deal','log.dealCreated', d.title, d.contactName);
       toast(t('toast.dealCreated'));
     }});
