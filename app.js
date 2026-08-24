@@ -81,7 +81,7 @@ en: {
   'confirm.delDeal':'Delete deal "%s"? (demo data only)',
   'field.dealName':'Deal name','field.value':'Value','field.stage':'Stage',
   'field.close':'Expected close','btn.createDeal':'Create deal','toast.dealCreated':'Deal created.',
-  'deal.newCustomer':'New customer','deal.nameRequired':'Enter a name.',
+  'deal.newCustomer':'New customer','deal.nameRequired':'Enter a name.','deal.view':'Open deal details','deal.notes':'Notes & details','deal.notesHint':'Write notes, reminders or details about this deal…','deal.notesSaved':'Notes saved.','deal.created':'Created',
   'field.company':'Customer','field.contactPerson':'Contact person','field.contactEmail':'Contact email',
   'customers.company':'Companies','customers.private':'Private customers','field.email':'Email','field.phone':'Phone',
   'field.valid':'Valid until','field.total':'Total',
@@ -245,7 +245,7 @@ sv: {
   'confirm.delDeal':'Ta bort affären "%s"? (endast demodata)',
   'field.dealName':'Affärsnamn','field.value':'Värde','field.stage':'Stadie',
   'field.close':'Förväntad stängning','btn.createDeal':'Skapa affär','toast.dealCreated':'Affär skapad.',
-  'deal.newCustomer':'Ny kund','deal.nameRequired':'Ange ett namn.',
+  'deal.newCustomer':'Ny kund','deal.nameRequired':'Ange ett namn.','deal.view':'Öppna affärsdetaljer','deal.notes':'Notiser & detaljer','deal.notesHint':'Skriv notiser, påminnelser eller detaljer om affären…','deal.notesSaved':'Notiser sparade.','deal.created':'Skapad',
   'field.company':'Kund','field.contactPerson':'Kontaktperson','field.contactEmail':'E-post',
   'customers.company':'Företagskunder','customers.private':'Privatkunder','field.email':'E-post','field.phone':'Telefon',
   'field.valid':'Giltig till','field.total':'Totalt',
@@ -551,7 +551,7 @@ if(window.SUPABASE_URL && window.SUPABASE_ANON_KEY && window.supabase && typeof 
 }
 const TBL = {
   companies:{db:'companies', map:{}},
-  deals:{db:'deals', map:{companyId:'company_id', contactName:'contact_name', contactEmail:'contact_email', lostAt:'lost_at'}},
+  deals:{db:'deals', map:{companyId:'company_id', contactName:'contact_name', contactEmail:'contact_email', lostAt:'lost_at', notes:'notes'}},
   quotes:{db:'quotes', map:{dealId:'deal_id', companyId:'company_id', contactName:'contact_name', contactEmail:'contact_email'}},
   invoices:{db:'invoices', map:{quoteId:'quote_id', companyId:'company_id', contactName:'contact_name', contactEmail:'contact_email'}},
   subs:{db:'subs', map:{companyId:'company_id', contactName:'contact_name', contactEmail:'contact_email'}},
@@ -1035,13 +1035,14 @@ function boardHtml(){
     const ds = db.deals.filter(d=>d.stage===s && match(d) && !(s==='Lost' && isLostArchived(d)));
     return `<div class="col" data-stage="${s}" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event,'${s}')">
       <h3><span>${t('st.'+s)}</span><span>${ds.length} · ${money(ds.reduce((a,d)=>a+d.value,0))}</span></h3>
-      ${ds.map(d=>`<div class="deal" draggable="true" ondragstart="dragStart(event,'${d.id}')">
+      ${ds.map(d=>`<div class="deal" draggable="true" ondragstart="dragStart(event,'${d.id}')" onclick="viewDeal('${d.id}')" style="cursor:pointer" title="${t('deal.view')}">
         <div class="t">${esc(d.title)}</div>
         <div class="muted" style="font-size:12px">${esc(person(d))} · ${esc(company(d.companyId))}</div>
         <div class="m"><b>${money(d.value)}</b><span>${fmtDate(d.close)}</span></div>
+        ${d.notes?`<div class="muted" style="font-size:12px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📝 ${esc(d.notes.slice(0,60))}</div>`:''}
         ${adminOnly(`<div class="actions" style="margin-top:8px">
-          <button class="sm" onclick="newQuote('${d.id}')">${t('btn.quote')}</button>
-          <button class="sm ghost danger" onclick="delDeal('${d.id}')">${t('btn.delete')}</button>
+          <button class="sm" onclick="event.stopPropagation();newQuote('${d.id}')">${t('btn.quote')}</button>
+          <button class="sm ghost danger" onclick="event.stopPropagation();delDeal('${d.id}')">${t('btn.delete')}</button>
         </div>`)}</div>`).join('')}
     </div>`;
   }).join('')}</div>`;
@@ -1078,6 +1079,45 @@ function isLostArchived(d){
 function delDeal(id){
   const d=byId(db.deals,id); if(!d||!confirm(t('confirm.delDeal', d.title))) return;
   db.deals = db.deals.filter(x=>x.id!==id); logIt('deal','log.dealDeleted', d.title); save(); route();
+}
+/* deal detail modal: click anywhere on a pipeline card → info + notes box */
+function viewDeal(id){
+  const d = byId(db.deals,id); if(!d) return;
+  const c = byId(db.companies,d.companyId);
+  const qs = db.quotes.filter(q=>q.dealId===id);
+  const isAdminU = !ME || ME.role==='admin';
+  modal({title:esc(d.title), wide:true, ok:'', body:`
+    <div class="row" style="align-items:start;gap:18px">
+      <div style="flex:1;min-width:0">
+        <table class="kv"><tbody>
+          <tr><td>${t('field.company')}</td><td>${c?`<span class="link" onclick="go('#/customer/${c.id}')">${esc(c.name)}</span>`:'—'}</td></tr>
+          <tr><td>${t('field.contactPerson')}</td><td>${esc(d.contactName||'—')}</td></tr>
+          <tr><td>${t('field.contactEmail')}</td><td>${esc(d.contactEmail||'—')}</td></tr>
+          <tr><td>${t('field.value')}</td><td>${money(d.value)}</td></tr>
+          <tr><td>${t('field.stage')}</td><td>${tag(d.stage)}</td></tr>
+          <tr><td>${t('field.close')}</td><td>${fmtDate(d.close)}</td></tr>
+          <tr><td>${t('deal.created')}</td><td>${fmtDate(d.created)}</td></tr>
+        </tbody></table>
+        ${qs.length?`<h3 style="margin:16px 0 6px">${t('nav.quotes')}</h3><table><tbody>${qs.map(q=>`<tr>
+          <td class="mono link" onclick="go('#/quote/${q.id}')">${q.no}</td><td>${tag(q.status)}</td>
+          <td class="num">${money(quoteTotal(q))}</td></tr>`).join('')}</tbody></table>`:''}
+        <div style="margin-top:16px;display:flex;gap:8px">
+          ${adminOnly(`<button class="sm" onclick="editDeal('${d.id}')">${t('btn.edit')}</button>
+            <button class="sm ghost danger" onclick="delDeal('${d.id}')">${t('btn.delete')}</button>`)}
+        </div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <h3 style="margin:0 0 6px">${t('deal.notes')}</h3>
+        <textarea id="deal-notes" rows="12" style="width:100%" placeholder="${t('deal.notesHint')}" ${isAdminU?'':'readonly'}>${esc(d.notes||'')}</textarea>
+        ${adminOnly(`<div style="margin-top:8px;text-align:right"><button class="sm primary" onclick="saveDealNotes('${d.id}')">${t('btn.save')}</button></div>`)}
+      </div>
+    </div>`});
+}
+function saveDealNotes(id){
+  const d = byId(db.deals,id); if(!d) return;
+  const el = document.getElementById('deal-notes'); if(!el) return;
+  d.notes = el.value.trim();
+  toast(t('deal.notesSaved')); save(); route();
 }
 function newDeal(companyId){
   modal({title:t('btn.newDeal'), body:`
