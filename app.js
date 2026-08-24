@@ -38,7 +38,7 @@ en: {
   'profile.security':'Security','profile.newPassword':'New password','profile.changePassword':'Change password',
   'profile.nameSaved':'Name updated.','profile.passwordChanged':'Password updated.',
   'profile.pwShort':'Password must be at least 6 characters.',
-  'st.New':'New','st.Contacted':'Contacted','st.Qualified':'Qualified','st.Proposal':'Proposal',
+  'st.New':'New','st.Contacted':'Contacted','st.Proposal':'Offer',
   'st.Won':'Won','st.Lost':'Lost','st.Draft':'Draft','st.Sent':'Sent','st.Opened':'Opened',
   'st.Accepted':'Accepted','st.Paid':'Paid','st.Active':'Active','st.Rejected':'Rejected',
   'st.Overdue':'Overdue','st.Cancelled':'Cancelled','st.Void':'Void',
@@ -202,7 +202,7 @@ sv: {
   'profile.security':'Säkerhet','profile.newPassword':'Nytt lösenord','profile.changePassword':'Byt lösenord',
   'profile.nameSaved':'Namn uppdaterat.','profile.passwordChanged':'Lösenord uppdaterat.',
   'profile.pwShort':'Lösenordet måste vara minst 6 tecken.',
-  'st.New':'Ny','st.Contacted':'Kontaktad','st.Qualified':'Kvalificerad','st.Proposal':'Förslag',
+  'st.New':'Ny','st.Contacted':'Kontaktad','st.Proposal':'Offert',
   'st.Won':'Vunnen','st.Lost':'Förlorad','st.Draft':'Utkast','st.Sent':'Skickad','st.Opened':'Öppnad',
   'st.Accepted':'Accepterad','st.Paid':'Betald','st.Active':'Aktiv','st.Rejected':'Avvisad',
   'st.Overdue':'Förfallen','st.Cancelled':'Avbruten','st.Void':'Makulerad',
@@ -432,7 +432,7 @@ function paintLang(){
   applyTheme();
 }
 
-const STAGES = ['New','Contacted','Qualified','Proposal','Won','Lost'];
+const STAGES = ['New','Contacted','Proposal','Won','Lost'];
 /* currencies — display only; the demo data stays in USD-denominated numbers */
 const CUR = {
   USD:{code:'USD',locale:'en-US',display:'narrowSymbol'},
@@ -502,7 +502,7 @@ function seed(){
     deals: [
       {id:'dl_1',title:'Line-2 retrofit',companyId:'co_1',contactName:'Anna Lind',contactEmail:'anna.lind@northwind.example',value:48000,stage:'Proposal',close:days(base,12),created:days(base,-40)},
       {id:'dl_2',title:'Site safety package',companyId:'co_2',contactName:'Marcus Larsson',contactEmail:'marcus@larssonbygg.example',value:16500,stage:'Won',close:days(base,-6),created:days(base,-38)},
-      {id:'dl_3',title:'Rooftop array — phase 1',companyId:'co_3',contactName:'Priya Raman',contactEmail:'priya@helios.example',value:92000,stage:'Qualified',close:days(base,34),created:days(base,-25)},
+      {id:'dl_3',title:'Rooftop array — phase 1',companyId:'co_3',contactName:'Priya Raman',contactEmail:'priya@helios.example',value:92000,stage:'Proposal',close:days(base,34),created:days(base,-25)},
       {id:'dl_4',title:'Fleet tracking rollout',companyId:'co_4',contactName:'Tomas Kvist',contactEmail:'tomas@kvistlog.example',value:27400,stage:'Contacted',close:days(base,21),created:days(base,-17)},
       {id:'dl_5',title:'Clinic booking system',companyId:'co_5',contactName:'Dr. Elena Vos',contactEmail:'elena@meridiandental.example',value:11200,stage:'New',close:days(base,45),created:days(base,-8)},
       {id:'dl_6',title:'Spare parts contract',companyId:'co_1',contactName:'Jonas Berg',contactEmail:'jonas.berg@northwind.example',value:8400,stage:'Lost',close:days(base,-2),created:days(base,-14),lostAt:new Date(Date.now()-2*86400000).toISOString()},
