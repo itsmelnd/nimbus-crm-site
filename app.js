@@ -559,7 +559,7 @@ const TBL = {
   payments:{db:'payments', map:{invoiceId:'invoice_id', companyId:'company_id'}},
   log:{db:'log', map:{}},
   trash:{db:'trash', map:{companyId:'company_id'}},
-  tasks:{db:'tasks', map:{companyId:'company_id', dealId:'deal_id'}},
+  tasks:{db:'tasks', map:{companyId:'company_id', dealId:'deal_id', auto:'auto'}},
 };
 const REV = Object.fromEntries(Object.entries(TBL).map(([t,v])=>[t, Object.fromEntries(Object.entries(v.map).map(([a,b])=>[b,a]))]));
 const flip = (map,o) => { const r={}; for(const [k,v] of Object.entries(o||{})) r[map[k]||k]=v; return r; };
