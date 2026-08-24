@@ -84,6 +84,7 @@ en: {
   'deal.newCustomer':'New customer','deal.nameRequired':'Enter a name.','deal.view':'Open deal details','deal.notes':'Notes & details','deal.notesHint':'Write notes, reminders or details about this deal…','deal.notesSaved':'Notes saved.','deal.created':'Created','deal.mail':'Email','deal.call':'Call','deal.noPhone':'No phone number saved for this customer.',
   'field.company':'Customer','field.contactPerson':'Contact person','field.contactEmail':'Contact email',
   'customers.company':'Companies','customers.private':'Private customers','field.email':'Email','field.phone':'Phone',
+  'nav.customize':'Customize menu','nav.newGroup':'New group','nav.saved':'Menu saved.','nav.up':'Move up','nav.down':'Move down',
   'field.valid':'Valid until','field.total':'Total',
   'email.sub':'Inbox and sending via your own email server (IMAP/SMTP).',
   'email.serverUrl':'Server URL','email.refresh':'Refresh','email.send':'Send email','email.inbox':'Inbox',
@@ -248,6 +249,7 @@ sv: {
   'deal.newCustomer':'Ny kund','deal.nameRequired':'Ange ett namn.','deal.view':'Öppna affärsdetaljer','deal.notes':'Notiser & detaljer','deal.notesHint':'Skriv notiser, påminnelser eller detaljer om affären…','deal.notesSaved':'Notiser sparade.','deal.created':'Skapad','deal.mail':'Maila','deal.call':'Ring','deal.noPhone':'Inget telefonnummer sparat för kunden.',
   'field.company':'Kund','field.contactPerson':'Kontaktperson','field.contactEmail':'E-post',
   'customers.company':'Företagskunder','customers.private':'Privatkunder','field.email':'E-post','field.phone':'Telefon',
+  'nav.customize':'Anpassa meny','nav.newGroup':'Ny kategori','nav.saved':'Menyn sparad.','nav.up':'Flytta upp','nav.down':'Flytta ner',
   'field.valid':'Giltig till','field.total':'Totalt',
   'email.sub':'Inkorg och utskick via din egen e-postserver (IMAP/SMTP).',
   'email.serverUrl':'Serveradress','email.refresh':'Uppdatera','email.send':'Skicka e-post','email.inbox':'Inkorg',
@@ -415,6 +417,117 @@ function initGroups(){
       if(chev) chev.textContent = '▸';
     }
   });
+}
+/* ------------------------- customizable sidebar ------------------------- */
+const NAV_LINKS = {
+  pipeline:   {href:'#/pipeline',   i18n:'nav.pipeline',   count:'deals'},
+  lost:       {href:'#/lost',       i18n:'nav.lost'},
+  companies:  {href:'#/companies',  i18n:'nav.companies'},
+  quotes:     {href:'#/quotes',     i18n:'nav.quotes',     count:'quotes'},
+  invoices:   {href:'#/invoices',   i18n:'nav.invoices',   count:'invoices'},
+  payments:   {href:'#/payments',   i18n:'nav.payments',   count:'payments'},
+  email:      {href:'#/email',      i18n:'nav.email'},
+  tasks:      {href:'#/tasks',      i18n:'nav.tasks'},
+  automation: {href:'#/automation', i18n:'nav.automation'},
+  profile:    {href:'#/profile',    i18n:'nav.profile'},
+  users:      {href:'#/users',      i18n:'nav.users',      adminOnly:true},
+  portal:     {href:'#/portal',     i18n:'nav.portal'},
+  trash:      {href:'#/trash',      i18n:'nav.trash',      adminOnly:true},
+};
+const NAV_DEFAULT = [
+  {id:'sales',  name:'Försäljning', items:['pipeline','lost','companies','quotes']},
+  {id:'revenue',name:'Intäkter',    items:['invoices','payments']},
+  {id:'system', name:'System',      items:['email','tasks','automation','profile','users','portal','trash']},
+];
+function navLayout(){
+  let L = null;
+  try{ L = JSON.parse(localStorage.getItem('nimbus-nav')); }catch(e){}
+  if(!Array.isArray(L) || !L.length) L = NAV_DEFAULT.map(g=>({id:g.id, name:g.name, items:[...g.items]}));
+  return L;
+}
+function saveNavLayout(L){ try{ localStorage.setItem('nimbus-nav', JSON.stringify(L)); }catch(e){} }
+function buildNav(){
+  const nav = document.getElementById('nav'); if(!nav) return;
+  const L = navLayout();
+  let s = {};
+  try{ s = JSON.parse(localStorage.getItem('nimbus-grp') || '{}'); }catch(e){}
+  const adm = isAdmin();
+  nav.innerHTML = L.map(g=>`
+    <button class="grp" data-grp="${g.id}" onclick="toggleGrp('${g.id}')"><span>${esc(g.name)}</span><i class="chev">${s[g.id] ? '▸' : '▾'}</i></button>
+    <div class="grp-items" id="grp-${g.id}" style="${s[g.id] ? 'display:none' : ''}">
+      ${g.items.map(id=>{
+        const l = NAV_LINKS[id]; if(!l) return '';
+        if(l.adminOnly && !adm) return '';
+        return `<a href="${l.href}"><span data-i18n="${l.i18n}">${esc(t(l.i18n))}</span>${l.count ? `<span class="count" data-c="${l.count}"></span>` : ''}</a>`;
+      }).join('')}
+    </div>`).join('');
+  paintCounts();
+}
+function customizeNav(){
+  const L = navLayout();
+  modal({title:t('nav.customize'), wide:true, ok:t('btn.save'), body:`
+    <div style="margin-bottom:12px"><button class="sm primary" onclick="navAddGroup()">＋ ${t('nav.newGroup')}</button></div>
+    ${L.map((g,gi)=>`
+      <div class="card" style="padding:10px;margin-bottom:10px">
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <input id="ng-${gi}" value="${esc(g.name)}" style="flex:1;min-width:140px">
+          <button class="sm" title="${t('nav.up')}" onclick="navMoveGroup(${gi},-1)">↑</button>
+          <button class="sm" title="${t('nav.down')}" onclick="navMoveGroup(${gi},1)">↓</button>
+          <button class="sm ghost danger" title="${t('btn.delete')}" onclick="navDelGroup(${gi})">🗑</button>
+        </div>
+        ${g.items.map((id,ii)=>`
+          <div style="display:flex;gap:6px;align-items:center;margin-top:6px">
+            <span style="flex:1;font-size:13px">${esc(t(NAV_LINKS[id] ? NAV_LINKS[id].i18n : id))}</span>
+            <select onchange="navMoveItem('${g.id}','${id}',this.value)">
+              ${L.map((x,xi)=>`<option value="${xi}" ${xi===gi?'selected':''}>${esc(x.name)}</option>`).join('')}
+            </select>
+            <button class="sm" title="${t('nav.up')}" onclick="navMoveItemUp('${g.id}','${id}')">↑</button>
+            <button class="sm" title="${t('nav.down')}" onclick="navMoveItemDown('${g.id}','${id}')">↓</button>
+          </div>`).join('')}
+      </div>`).join('')}
+  `, onSubmit(){
+    const L2 = navLayout();
+    L2.forEach((g,i)=>{
+      const el = document.getElementById('ng-'+i);
+      if(el && el.value.trim()) g.name = el.value.trim();
+    });
+    saveNavLayout(L2);
+    toast(t('nav.saved'));
+    buildNav();
+    return true;
+  }});
+}
+function navRerender(){ if(document.getElementById('mform')) customizeNav(); }
+function navAddGroup(){
+  const L = navLayout();
+  L.push({id:'g'+Date.now().toString(36), name:t('nav.newGroup'), items:[]});
+  saveNavLayout(L); navRerender();
+}
+function navDelGroup(gi){
+  const L = navLayout(); L.splice(gi,1); saveNavLayout(L); navRerender();
+}
+function navMoveGroup(gi,dir){
+  const L = navLayout(); const j = gi+dir;
+  if(j<0 || j>=L.length) return;
+  const t2 = L[gi]; L[gi] = L[j]; L[j] = t2;
+  saveNavLayout(L); navRerender();
+}
+function navMoveItem(gid,id,gi2){
+  const L = navLayout();
+  const g = L.find(x=>x.id===gid); if(!g || gi2<0 || gi2>=L.length) return;
+  g.items = g.items.filter(x=>x!==id);
+  if(!L[gi2].items.includes(id)) L[gi2].items.push(id);
+  saveNavLayout(L); navRerender();
+}
+function navMoveItemUp(gid,id){
+  const L = navLayout(); const g = L.find(x=>x.id===gid); if(!g) return;
+  const i = g.items.indexOf(id);
+  if(i>0){ const t2 = g.items[i]; g.items[i] = g.items[i-1]; g.items[i-1] = t2; saveNavLayout(L); navRerender(); }
+}
+function navMoveItemDown(gid,id){
+  const L = navLayout(); const g = L.find(x=>x.id===gid); if(!g) return;
+  const i = g.items.indexOf(id);
+  if(i>=0 && i<g.items.length-1){ const t2 = g.items[i]; g.items[i] = g.items[i+1]; g.items[i+1] = t2; saveNavLayout(L); navRerender(); }
 }
 function paintLang(){
   document.title = t('app.title');
@@ -687,6 +800,7 @@ async function afterLogin(session){
   await load();
   save(); paintLang(); route(); fetchRates();
   showApp();
+  buildNav();
   subscribeRealtime();
   initNotifications();
 }
@@ -2351,15 +2465,17 @@ function route(){
   notFound();
 }
 function paintCounts(){
-  const c = {deals:db.deals.filter(d=>!['Won','Lost'].includes(d.stage)).length,
-    quotes:db.quotes.length, invoices:db.invoices.filter(i=>i.status!=='Paid').length,
-    payments:db.payments.length};
+  const d = db || {};
+  const c = {deals:(d.deals||[]).filter(x=>!['Won','Lost'].includes(x.stage)).length,
+    quotes:(d.quotes||[]).length, invoices:(d.invoices||[]).filter(i=>i.status!=='Paid').length,
+    payments:(d.payments||[]).length};
   document.querySelectorAll('[data-c]').forEach(e=>e.textContent = c[e.dataset.c] ?? '');
 }
 window.addEventListener('hashchange', route);
 (async function init(){
   try{
     initGroups();
+    buildNav();
     if(sb){
       const { data } = await sb.auth.getSession();
       if(data.session){ await afterLogin(data.session); }

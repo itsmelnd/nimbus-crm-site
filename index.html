@@ -235,32 +235,11 @@
 <body>
 <aside id="aside">
   <div class="logo"><i></i> Nimbus CRM</div>
-  <a href="#/dashboard"><span data-i18n="nav.dashboard">Dashboard</span></a>
-  <button class="grp" data-grp="sales" onclick="toggleGrp('sales')"><span data-i18n="grp.sales">Sales</span><i class="chev">▾</i></button>
-  <div class="grp-items" id="grp-sales">
-    <a href="#/pipeline"><span data-i18n="nav.pipeline">Pipeline</span> <span class="count" data-c="deals"></span></a>
-    <a href="#/lost"><span data-i18n="nav.lost">Lost deals</span></a>
-    <a href="#/companies"><span data-i18n="nav.companies">Customer list</span></a>
-    <a href="#/quotes"><span data-i18n="nav.quotes">Offers &amp; Quotes</span> <span class="count" data-c="quotes"></span></a>
-  </div>
-  <button class="grp" data-grp="revenue" onclick="toggleGrp('revenue')"><span data-i18n="grp.revenue">Revenue</span><i class="chev">▾</i></button>
-  <div class="grp-items" id="grp-revenue">
-    <a href="#/invoices"><span data-i18n="nav.invoices">Invoices</span> <span class="count" data-c="invoices"></span></a>
-    <a href="#/payments"><span data-i18n="nav.payments">Payments</span> <span class="count" data-c="payments"></span></a>
-  </div>
-  <button class="grp" data-grp="system" onclick="toggleGrp('system')"><span data-i18n="grp.system">System</span><i class="chev">▾</i></button>
-  <div class="grp-items" id="grp-system">
-    <a href="#/email"><span data-i18n="nav.email">Email</span></a>
-    <a href="#/tasks"><span data-i18n="nav.tasks">Tasks</span></a>
-    <a href="#/automation"><span data-i18n="nav.automation">Automation log</span></a>
-    <a href="#/profile"><span data-i18n="nav.profile">Profile</span></a>
-    <a href="#/users" id="nav-users" style="display:none"><span data-i18n="nav.users">Users</span></a>
-    <a href="#/portal"><span data-i18n="nav.portal">Client portal preview</span></a>
-    <a href="#/trash"><span data-i18n="nav.trash">Trash</span></a>
-  </div>
+  <nav id="nav"></nav>
   <div class="sidefoot">
     <div data-i18n="side.demo">Demo build — data lives in your Supabase database. No real emails, no real payments.</div>
     <div style="margin-top:8px;display:flex;gap:6px">
+      <button class="sm ghost" onclick="customizeNav()" title="Anpassa menyn">⚙️</button>
       <button class="sm ghost" id="resetbtn" data-i18n="side.reset" onclick="resetDemo()">Reset demo data</button>
       <button class="sm ghost" id="logoutbtn" style="display:none" data-i18n="side.logout" onclick="logout()">Log out</button>
     </div>
@@ -294,8 +273,8 @@
   </div>
 </div>
 
-<script src="supabase-config.js?v=50"></script>
-<script src="supabase-js.js?v=50"></script>
-<script src="app.js?v=50"></script>
+<script src="supabase-config.js?v=51"></script>
+<script src="supabase-js.js?v=51"></script>
+<script src="app.js?v=51"></script>
 </body>
 </html>
