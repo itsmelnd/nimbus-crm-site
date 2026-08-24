@@ -18,7 +18,9 @@ en: {
   'app.title':'Nimbus CRM — Demo',
   'nav.dashboard':'Dashboard','nav.pipeline':'Pipeline','nav.companies':'Customer list',
   'nav.quotes':'Offers & Quotes','nav.invoices':'Invoices',
-  'nav.payments':'Payments','nav.automation':'Automation log','nav.portal':'Client portal preview','nav.email':'Email','nav.tasks':'Tasks',
+  'nav.payments':'Payments','nav.automation':'Automation log','nav.portal':'Client portal preview','nav.email':'Email','nav.tasks':'Tasks','nav.lost':'Lost deals',
+  'lost.sub':'Deals moved to Lost leave the pipeline after 24h and land here.','lost.empty':'No lost deals.','lost.archived':'Archived','lost.leaves':'Leaves pipeline soon','lost.restored':'Deal restored.','lost.total':'%s total lost',
+  'log.dealLost':'Deal "%s" lost (quote %s rejected)',
   'task.sub':'Reminders linked to customers and deals.','task.new':'New task','task.title':'Title','task.due':'Due','task.done':'Done','task.open':'Open tasks',
   'task.empty':'No tasks yet.','task.created':'Task created.','task.updated':'Task updated.','task.deleted':'Task deleted.',
   'task.overdue':'Overdue','task.today':'Today','task.allDone':'All tasks done 🎉',
@@ -180,7 +182,9 @@ sv: {
   'app.title':'Nimbus CRM – Demo',
   'nav.dashboard':'Översikt','nav.pipeline':'Pipeline','nav.companies':'Kundlista',
   'nav.quotes':'Offerter','nav.invoices':'Fakturor',
-  'nav.payments':'Betalningar','nav.automation':'Automatiseringslogg','nav.portal':'Kundportal','nav.email':'E-post','nav.tasks':'Uppgifter',
+  'nav.payments':'Betalningar','nav.automation':'Automatiseringslogg','nav.portal':'Kundportal','nav.email':'E-post','nav.tasks':'Uppgifter','nav.lost':'Förlorade affärer',
+  'lost.sub':'Affärer som flyttats till Förlorad lämnar pipelinen efter 24 timmar och hamnar här.','lost.empty':'Inga förlorade affärer.','lost.archived':'Arkiverad','lost.leaves':'Lämnar snart pipelinen','lost.restored':'Affären återställdes.','lost.total':'%s totalt förlorat',
+  'log.dealLost':'Affär "%s" förlorad (offert %s avvisad)',
   'task.sub':'Påminnelser kopplade till kunder och affärer.','task.new':'Ny uppgift','task.title':'Titel','task.due':'Förfaller','task.done':'Klar','task.open':'Öppna uppgifter',
   'task.empty':'Inga uppgifter ännu.','task.created':'Uppgift skapad.','task.updated':'Uppgift uppdaterad.','task.deleted':'Uppgift borttagen.',
   'task.overdue':'Förfallen','task.today':'Idag','task.allDone':'Alla uppgifter är klara 🎉',
@@ -501,7 +505,7 @@ function seed(){
       {id:'dl_3',title:'Rooftop array — phase 1',companyId:'co_3',contactName:'Priya Raman',contactEmail:'priya@helios.example',value:92000,stage:'Qualified',close:days(base,34),created:days(base,-25)},
       {id:'dl_4',title:'Fleet tracking rollout',companyId:'co_4',contactName:'Tomas Kvist',contactEmail:'tomas@kvistlog.example',value:27400,stage:'Contacted',close:days(base,21),created:days(base,-17)},
       {id:'dl_5',title:'Clinic booking system',companyId:'co_5',contactName:'Dr. Elena Vos',contactEmail:'elena@meridiandental.example',value:11200,stage:'New',close:days(base,45),created:days(base,-8)},
-      {id:'dl_6',title:'Spare parts contract',companyId:'co_1',contactName:'Jonas Berg',contactEmail:'jonas.berg@northwind.example',value:8400,stage:'Lost',close:days(base,-2),created:days(base,-14)},
+      {id:'dl_6',title:'Spare parts contract',companyId:'co_1',contactName:'Jonas Berg',contactEmail:'jonas.berg@northwind.example',value:8400,stage:'Lost',close:days(base,-2),created:days(base,-14),lostAt:new Date(Date.now()-2*86400000).toISOString()},
     ],
     quotes: [
       {id:'qt_1',no:'Q-1041',dealId:'dl_2',companyId:'co_2',contactName:'Marcus Larsson',contactEmail:'marcus@larssonbygg.example',status:'Accepted',created:days(base,-20),valid:days(base,10),tax:25,
@@ -547,7 +551,7 @@ if(window.SUPABASE_URL && window.SUPABASE_ANON_KEY && window.supabase && typeof 
 }
 const TBL = {
   companies:{db:'companies', map:{}},
-  deals:{db:'deals', map:{companyId:'company_id', contactName:'contact_name', contactEmail:'contact_email'}},
+  deals:{db:'deals', map:{companyId:'company_id', contactName:'contact_name', contactEmail:'contact_email', lostAt:'lost_at'}},
   quotes:{db:'quotes', map:{dealId:'deal_id', companyId:'company_id', contactName:'contact_name', contactEmail:'contact_email'}},
   invoices:{db:'invoices', map:{quoteId:'quote_id', companyId:'company_id', contactName:'contact_name', contactEmail:'contact_email'}},
   subs:{db:'subs', map:{companyId:'company_id', contactName:'contact_name', contactEmail:'contact_email'}},
@@ -1028,7 +1032,7 @@ function boardHtml(){
   const q = (document.getElementById('q')?.value||'').toLowerCase();
   const match = d => !q || (d.title+' '+(d.contactName||'')+' '+company(d.companyId)).toLowerCase().includes(q);
   return `<div class="board${compactBoard?' compact':''}">${STAGES.map(s=>{
-    const ds = db.deals.filter(d=>d.stage===s && match(d));
+    const ds = db.deals.filter(d=>d.stage===s && match(d) && !(s==='Lost' && isLostArchived(d)));
     return `<div class="col" data-stage="${s}" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event,'${s}')">
       <h3><span>${t('st.'+s)}</span><span>${ds.length} · ${money(ds.reduce((a,d)=>a+d.value,0))}</span></h3>
       ${ds.map(d=>`<div class="deal" draggable="true" ondragstart="dragStart(event,'${d.id}')">
@@ -1058,7 +1062,18 @@ function dragLeave(e){ e.currentTarget.classList.remove('over'); }
 function drop(e,stage){
   e.preventDefault(); e.currentTarget.classList.remove('over');
   const d = byId(db.deals,dragging); if(!d) return;
-  if(d.stage!==stage){ d.stage=stage; logIt('deal','log.dealMoved', d.title, ['st.'+stage]); save(); route(); }
+  if(d.stage!==stage){ setDealStage(d, stage); logIt('deal','log.dealMoved', d.title, ['st.'+stage]); save(); route(); }
+}
+/* moves a deal to a stage, tracking lostAt so Lost deals leave the pipeline after 24h */
+function setDealStage(d, stage){
+  if(stage==='Lost' && d.stage!=='Lost' && !d.lostAt) d.lostAt = new Date().toISOString();
+  if(stage!=='Lost') d.lostAt = null;
+  d.stage = stage;
+}
+/* a Lost deal is archived (hidden from the pipeline board) 24h after it was lost */
+function isLostArchived(d){
+  if(d.stage!=='Lost' || !d.lostAt) return false;
+  return Date.now() - new Date(d.lostAt).getTime() >= 86400000;
 }
 function delDeal(id){
   const d=byId(db.deals,id); if(!d||!confirm(t('confirm.delDeal', d.title))) return;
@@ -1393,6 +1408,27 @@ function restoreTrash(id){
   cascadeTouched = true;   /* the upcoming sync legitimately re-inserts those rows */
   suppressLoad = true;   /* local state is ahead of the DB until the sync lands */
   toast(t('trash.restored')); save(); route();
+}
+/* ---------------- lost deals ---------------- */
+function vLost(){
+  const lost = db.deals.filter(d=>d.stage==='Lost').sort((a,b)=>(b.lostAt||'').localeCompare(a.lostAt||''));
+  const total = lost.reduce((s,d)=>s+d.value,0);
+  head(t('nav.lost'), t('lost.total', money(total)));
+  view().innerHTML = `<div class="card">${lost.length?`<table><tbody>${lost.map(d=>{
+    const arch = isLostArchived(d);
+    return `<tr>
+      <td><b>${esc(d.title)}</b><div class="muted" style="font-size:12px">${esc(person(d))} · ${esc(company(d.companyId))}</div></td>
+      <td class="num">${money(d.value)}</td>
+      <td class="muted">${d.lostAt?fmtDate(d.lostAt.slice(0,10)):'—'}</td>
+      <td><span class="tag ${arch?'t-red':'t-amber'}">${arch?t('lost.archived'):t('lost.leaves')}</span></td>
+      <td style="text-align:right">${adminOnly(`<button class="sm" onclick="restoreLost('${d.id}')">${t('trash.restore')}</button>
+        <button class="sm ghost danger" onclick="delDeal('${d.id}')">${t('btn.delete')}</button>`)}</td>
+    </tr>`;}).join('')}</tbody></table>`:`<div class="empty">${t('lost.empty')}</div>`}</div>`;
+}
+function restoreLost(id){
+  const d = byId(db.deals,id); if(!d) return;
+  d.stage = 'New'; d.lostAt = null;
+  toast(t('lost.restored')); save(); route();
 }
 /* ---------------- tasks / to-dos ---------------- */
 function vTasks(){
@@ -1775,13 +1811,13 @@ function sendQuote(id){
 function rejectQuote(id){
   const q=byId(db.quotes,id); if(!q) return;
   q.status='Rejected';
-  const d = q.dealId && byId(db.deals,q.dealId); if(d) d.stage='Lost';
+  const d = q.dealId && byId(db.deals,q.dealId); if(d){ setDealStage(d,'Lost'); logIt('deal','log.dealLost', d.title, q.no); }
   logIt('quote','log.quoteRejected', q.no); save(); route();
 }
 function acceptQuote(id){
   const q=byId(db.quotes,id); if(!q) return;
   q.status='Accepted';
-  const d = q.dealId && byId(db.deals,q.dealId); if(d){ d.stage='Won'; logIt('deal','log.dealWon', d.title, q.no); }
+  const d = q.dealId && byId(db.deals,q.dealId); if(d){ setDealStage(d,'Won'); logIt('deal','log.dealWon', d.title, q.no); }
   logIt('quote','log.quoteAccepted', q.no, person(q));
   save(); route();
   makeInvoices(id, true);
@@ -2192,6 +2228,7 @@ function go(h){ location.hash = h; }
 const ROUTES = [
   [/^#?\/?$|^#\/dashboard$/, vDashboard],
   [/^#\/pipeline$/, vPipeline],
+  [/^#\/lost$/, vLost],
   [/^#\/companies$/, vCompanies],
   [/^#\/quotes$/, vQuotes],
   [/^#\/quote\/(.+)$/, vQuote],
