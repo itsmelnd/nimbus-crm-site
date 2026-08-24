@@ -19,7 +19,7 @@ en: {
   'nav.dashboard':'Dashboard','nav.pipeline':'Pipeline','nav.companies':'Customer list',
   'nav.quotes':'Offers & Quotes','nav.invoices':'Invoices',
   'nav.payments':'Payments','nav.automation':'Automation log','nav.portal':'Client portal preview','nav.email':'Email','nav.tasks':'Tasks','nav.lost':'Lost deals',
-  'lost.sub':'Deals moved to Lost leave the pipeline after 24h and land here.','lost.empty':'No lost deals.','lost.archived':'Archived','lost.leaves':'Leaves pipeline soon','lost.restored':'Deal restored.','lost.total':'%s total lost',
+  'lost.sub':'Deals moved to Lost leave the pipeline after 24h and land here.','lost.empty':'No lost deals.','lost.archived':'Archived','lost.leaves':'Leaves pipeline soon','lost.restored':'Deal restored.','lost.total':'%s total lost','lost.left':'Leaves pipeline in %s h %s min',
   'log.dealLost':'Deal "%s" lost (quote %s rejected)',
   'task.sub':'Reminders linked to customers and deals.','task.new':'New task','task.title':'Title','task.due':'Due','task.done':'Done','task.open':'Open tasks',
   'task.empty':'No tasks yet.','task.created':'Task created.','task.updated':'Task updated.','task.deleted':'Task deleted.',
@@ -183,7 +183,7 @@ sv: {
   'nav.dashboard':'Översikt','nav.pipeline':'Pipeline','nav.companies':'Kundlista',
   'nav.quotes':'Offerter','nav.invoices':'Fakturor',
   'nav.payments':'Betalningar','nav.automation':'Automatiseringslogg','nav.portal':'Kundportal','nav.email':'E-post','nav.tasks':'Uppgifter','nav.lost':'Förlorade affärer',
-  'lost.sub':'Affärer som flyttats till Förlorad lämnar pipelinen efter 24 timmar och hamnar här.','lost.empty':'Inga förlorade affärer.','lost.archived':'Arkiverad','lost.leaves':'Lämnar snart pipelinen','lost.restored':'Affären återställdes.','lost.total':'%s totalt förlorat',
+  'lost.sub':'Affärer som flyttats till Förlorad lämnar pipelinen efter 24 timmar och hamnar här.','lost.empty':'Inga förlorade affärer.','lost.archived':'Arkiverad','lost.leaves':'Lämnar snart pipelinen','lost.restored':'Affären återställdes.','lost.total':'%s totalt förlorat','lost.left':'Lämnar pipelinen om %s h %s min',
   'log.dealLost':'Affär "%s" förlorad (offert %s avvisad)',
   'task.sub':'Påminnelser kopplade till kunder och affärer.','task.new':'Ny uppgift','task.title':'Titel','task.due':'Förfaller','task.done':'Klar','task.open':'Öppna uppgifter',
   'task.empty':'Inga uppgifter ännu.','task.created':'Uppgift skapad.','task.updated':'Uppgift uppdaterad.','task.deleted':'Uppgift borttagen.',
@@ -1410,6 +1410,29 @@ function restoreTrash(id){
   toast(t('trash.restored')); save(); route();
 }
 /* ---------------- lost deals ---------------- */
+let lostTicker = null;
+function lostLeft(d){
+  if(!d.lostAt) return null;
+  const ms = 86400000 - (Date.now() - new Date(d.lostAt).getTime());
+  if(ms <= 0) return null;
+  return t('lost.left', Math.floor(ms/3600000), Math.floor((ms%3600000)/60000));
+}
+function lostTickerRun(){
+  clearTimeout(lostTicker);
+  lostTicker = setTimeout(() => {
+    if(location.hash === '#/lost'){
+      document.querySelectorAll('.lost-t').forEach(el => {
+        const d = byId(db.deals, el.dataset.id);
+        if(d && d.stage==='Lost'){
+          const left = lostLeft(d);
+          el.textContent = left || t('lost.archived');
+          if(el.parentElement) el.parentElement.className = 'tag ' + (left ? 't-amber' : 't-red');
+        }
+      });
+      lostTickerRun();
+    }
+  }, 30000);
+}
 function vLost(){
   const lost = db.deals.filter(d=>d.stage==='Lost').sort((a,b)=>(b.lostAt||'').localeCompare(a.lostAt||''));
   const total = lost.reduce((s,d)=>s+d.value,0);
@@ -1420,10 +1443,11 @@ function vLost(){
       <td><b>${esc(d.title)}</b><div class="muted" style="font-size:12px">${esc(person(d))} · ${esc(company(d.companyId))}</div></td>
       <td class="num">${money(d.value)}</td>
       <td class="muted">${d.lostAt?fmtDate(d.lostAt.slice(0,10)):'—'}</td>
-      <td><span class="tag ${arch?'t-red':'t-amber'}">${arch?t('lost.archived'):t('lost.leaves')}</span></td>
+      <td><span class="tag ${arch?'t-red':'t-amber'}">${arch?t('lost.archived'):`<span class="lost-t" data-id="${d.id}">${lostLeft(d)||t('lost.archived')}</span>`}</span></td>
       <td style="text-align:right">${adminOnly(`<button class="sm" onclick="restoreLost('${d.id}')">${t('trash.restore')}</button>
         <button class="sm ghost danger" onclick="delDeal('${d.id}')">${t('btn.delete')}</button>`)}</td>
     </tr>`;}).join('')}</tbody></table>`:`<div class="empty">${t('lost.empty')}</div>`}</div>`;
+  lostTickerRun();
 }
 function restoreLost(id){
   const d = byId(db.deals,id); if(!d) return;
