@@ -2536,12 +2536,12 @@ function toggleNotifPanel(){
   const items = notifItems();
   const p = document.createElement('div');
   p.id = 'notifpanel';
-  p.style.cssText = 'position:fixed;top:' + (r.bottom + 6) + 'px;left:' + r.left + 'px;min-width:300px;max-width:380px;max-height:60vh;overflow:auto;background:var(--card,#fff);border:1px solid var(--line,#e3e6ec);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.18);z-index:90;padding:6px';
+  p.style.cssText = 'position:fixed;top:' + (r.bottom + 6) + 'px;left:' + r.left + 'px;min-width:300px;max-width:380px;max-height:60vh;overflow:auto;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.35);z-index:90;padding:6px';
   p.innerHTML = items.length
     ? items.map(n=>`<a href="${n.href}" onclick="document.getElementById('notifpanel')?.remove()"
         style="display:block;padding:8px 10px;border-radius:8px;text-decoration:none;color:inherit"
-        onmouseover="this.style.background='var(--card2,#f5f6f8)'" onmouseout="this.style.background=''">
-        <div style="font-size:13px;font-weight:600">${esc(n.title)}</div>
+        onmouseover="this.style.background='var(--over-bg)'" onmouseout="this.style.background='transparent'">
+        <div style="font-size:13px;font-weight:600;color:var(--ink)">${esc(n.title)}</div>
         ${n.body ? `<div class="muted" style="font-size:12px">${n.body}</div>` : ''}</a>`).join('')
     : `<div style="padding:14px;text-align:center;font-size:13px" class="muted">${t('notif.none')}</div>`;
   document.body.appendChild(p);
