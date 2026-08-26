@@ -25,7 +25,7 @@ en: {
   'task.empty':'No tasks yet.','task.created':'Task created.','task.updated':'Task updated.','task.deleted':'Task deleted.',
   'task.overdue':'Overdue','task.today':'Today','task.allDone':'All tasks done 🎉',
   'confirm.delTask':'Delete task "%s"?',
-  'notif.invoice':'Invoice %s is overdue','notif.deal':'Deal "%s" passed its expected close',
+  'notif.invoice':'Invoice %s is overdue','notif.deal':'%s — expected close passed','notif.task':'Task "%s" is overdue',
   'grp.sales':'Sales','grp.revenue':'Revenue','grp.system':'System',
   'side.demo':'Demo build — data lives in your Supabase database. No real emails, no real payments.',
   'side.reset':'Reset demo data',
@@ -190,7 +190,7 @@ sv: {
   'task.empty':'Inga uppgifter ännu.','task.created':'Uppgift skapad.','task.updated':'Uppgift uppdaterad.','task.deleted':'Uppgift borttagen.',
   'task.overdue':'Förfallen','task.today':'Idag','task.allDone':'Alla uppgifter är klara 🎉',
   'confirm.delTask':'Ta bort uppgiften "%s"?',
-  'notif.invoice':'Faktura %s är förfallen','notif.deal':'Affären "%s" passerade förväntad stängning',
+  'notif.invoice':'Faktura %s är förfallen','notif.deal':'%s — förväntad stängning passerad','notif.task':'Uppgiften "%s" är förfallen',
   'grp.sales':'Försäljning','grp.revenue':'Intäkter','grp.system':'System',
   'side.demo':'Demoversion — data ligger i din Supabase-databas. Inga riktiga mejl, inga riktiga betalningar.',
   'side.reset':'Återställ demodata',
@@ -877,7 +877,11 @@ function maybeNotify(){
   }
   for(const d of db.deals){
     if(!['Won','Lost'].includes(d.stage) && d.close && d.close < iso(today()))
-      open.push({id:'deal_'+d.id, title:t('notif.deal', d.title), body:company(d.companyId) || ''});
+      open.push({id:'deal_'+d.id, title:t('notif.deal', d.title), body:company(d.companyId)});
+  }
+  for(const x of db.tasks){
+    if(!x.done && x.due && x.due < iso(today()))
+      open.push({id:'task_'+x.id, title:t('notif.task', x.title), body:taskRef(x)});
   }
   const current = open.map(o=>o.id);
   const fresh = open.filter(o=>!notified.includes(o.id));
