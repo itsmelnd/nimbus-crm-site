@@ -193,6 +193,9 @@
   .undoing td{opacity:.5;transition:opacity .3s}
   .undocount{display:inline-block;min-width:20px;text-align:center;font-weight:700;opacity:.75;font-variant-numeric:tabular-nums;margin-right:2px}
   .todo-box{border-left:3px solid var(--accent,#2f6fed)}
+  #nav .nav-over{outline:2px dashed var(--accent,#2f6fed);outline-offset:-2px;border-radius:6px;background:rgba(47,111,237,.08)}
+  #nav [draggable="true"]{cursor:grab}
+  #nav [draggable="true"]:active{cursor:grabbing}
   .unseen td{font-weight:700}
   @keyframes pop{from{transform:translateY(6px);opacity:0}}
 
@@ -239,7 +242,7 @@
   <div class="sidefoot">
     <div data-i18n="side.demo">Demo build — data lives in your Supabase database. No real emails, no real payments.</div>
     <div style="margin-top:8px;display:flex;gap:6px">
-      <button class="sm ghost" onclick="customizeNav()" title="Anpassa menyn">⚙️</button>
+      <button class="sm ghost" onclick="customizeNav()" title="Håll inne och dra i menyn, eller öppna för att anpassa">⚙️</button>
       <button class="sm ghost" id="resetbtn" data-i18n="side.reset" onclick="resetDemo()">Reset demo data</button>
       <button class="sm ghost" id="logoutbtn" style="display:none" data-i18n="side.logout" onclick="logout()">Log out</button>
     </div>
@@ -273,8 +276,8 @@
   </div>
 </div>
 
-<script src="supabase-config.js?v=51"></script>
-<script src="supabase-js.js?v=51"></script>
-<script src="app.js?v=51"></script>
+<script src="supabase-config.js?v=52"></script>
+<script src="supabase-js.js?v=52"></script>
+<script src="app.js?v=52"></script>
 </body>
 </html>

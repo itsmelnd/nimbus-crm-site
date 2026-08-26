@@ -84,7 +84,7 @@ en: {
   'deal.newCustomer':'New customer','deal.nameRequired':'Enter a name.','deal.view':'Open deal details','deal.notes':'Notes & details','deal.notesHint':'Write notes, reminders or details about this deal…','deal.notesSaved':'Notes saved.','deal.created':'Created','deal.mail':'Email','deal.call':'Call','deal.noPhone':'No phone number saved for this customer.',
   'field.company':'Customer','field.contactPerson':'Contact person','field.contactEmail':'Contact email',
   'customers.company':'Companies','customers.private':'Private customers','field.email':'Email','field.phone':'Phone',
-  'nav.customize':'Customize menu','nav.newGroup':'New group','nav.saved':'Menu saved.','nav.up':'Move up','nav.down':'Move down',
+  'nav.customize':'Customize menu','nav.newGroup':'New group','nav.saved':'Menu saved.','nav.up':'Move up','nav.down':'Move down','nav.drag':'Hold and drag to move',
   'field.valid':'Valid until','field.total':'Total',
   'email.sub':'Inbox and sending via your own email server (IMAP/SMTP).',
   'email.serverUrl':'Server URL','email.refresh':'Refresh','email.send':'Send email','email.inbox':'Inbox',
@@ -249,7 +249,7 @@ sv: {
   'deal.newCustomer':'Ny kund','deal.nameRequired':'Ange ett namn.','deal.view':'Öppna affärsdetaljer','deal.notes':'Notiser & detaljer','deal.notesHint':'Skriv notiser, påminnelser eller detaljer om affären…','deal.notesSaved':'Notiser sparade.','deal.created':'Skapad','deal.mail':'Maila','deal.call':'Ring','deal.noPhone':'Inget telefonnummer sparat för kunden.',
   'field.company':'Kund','field.contactPerson':'Kontaktperson','field.contactEmail':'E-post',
   'customers.company':'Företagskunder','customers.private':'Privatkunder','field.email':'E-post','field.phone':'Telefon',
-  'nav.customize':'Anpassa meny','nav.newGroup':'Ny kategori','nav.saved':'Menyn sparad.','nav.up':'Flytta upp','nav.down':'Flytta ner',
+  'nav.customize':'Anpassa meny','nav.newGroup':'Ny kategori','nav.saved':'Menyn sparad.','nav.up':'Flytta upp','nav.down':'Flytta ner','nav.drag':'Håll inne och dra för att flytta',
   'field.valid':'Giltig till','field.total':'Totalt',
   'email.sub':'Inkorg och utskick via din egen e-postserver (IMAP/SMTP).',
   'email.serverUrl':'Serveradress','email.refresh':'Uppdatera','email.send':'Skicka e-post','email.inbox':'Inkorg',
@@ -446,6 +446,49 @@ function navLayout(){
   return L;
 }
 function saveNavLayout(L){ try{ localStorage.setItem('nimbus-nav', JSON.stringify(L)); }catch(e){} }
+/* drag & drop straight in the sidebar: hold a group heading or a link and
+   drop it onto another heading/group to move it */
+let navDrag = null;
+function navDragStart(e, kind, id, from){
+  navDrag = {kind, id, from};
+  if(e.dataTransfer){ e.dataTransfer.effectAllowed = 'move'; try{ e.dataTransfer.setData('text/plain', id); }catch(err){} }
+}
+function navDragOver(e){
+  e.preventDefault();
+  if(e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('#nav .nav-over').forEach(x=>x.classList.remove('nav-over'));
+  const el = e.currentTarget; if(el) el.classList.add('nav-over');
+}
+function navDragLeave(e){ const el = e.currentTarget; if(el) el.classList.remove('nav-over'); }
+function navDragEnd(){ navDrag = null; document.querySelectorAll('#nav .nav-over').forEach(x=>x.classList.remove('nav-over')); }
+function navDrop(e, kind, gid, itemId){
+  if(e.preventDefault) e.preventDefault();
+  document.querySelectorAll('#nav .nav-over').forEach(x=>x.classList.remove('nav-over'));
+  if(!navDrag) return;
+  const L = navLayout();
+  if(navDrag.kind === 'grp'){
+    if(kind === 'grp'){
+      const from = L.findIndex(g=>g.id===navDrag.id);
+      const to = L.findIndex(g=>g.id===gid);
+      if(from>=0 && to>=0 && from!==to){
+        const g = L.splice(from,1)[0];
+        L.splice(to,0,g);
+        saveNavLayout(L); buildNav();
+      }
+    }
+  } else if(navDrag.kind === 'item'){
+    const src = L.find(g=>g.id===navDrag.from);
+    const tgt = L.find(g=>g.id===gid);
+    if(src && tgt){
+      src.items = src.items.filter(x=>x!==navDrag.id);
+      let pos = (kind==='item' && itemId) ? tgt.items.indexOf(itemId) : -1;
+      if(pos<0) pos = tgt.items.length;
+      tgt.items.splice(pos, 0, navDrag.id);
+      saveNavLayout(L); buildNav();
+    }
+  }
+  navDrag = null;
+}
 function buildNav(){
   const nav = document.getElementById('nav'); if(!nav) return;
   const L = navLayout();
@@ -453,12 +496,18 @@ function buildNav(){
   try{ s = JSON.parse(localStorage.getItem('nimbus-grp') || '{}'); }catch(e){}
   const adm = isAdmin();
   nav.innerHTML = L.map(g=>`
-    <button class="grp" data-grp="${g.id}" onclick="toggleGrp('${g.id}')"><span>${esc(g.name)}</span><i class="chev">${s[g.id] ? '▸' : '▾'}</i></button>
-    <div class="grp-items" id="grp-${g.id}" style="${s[g.id] ? 'display:none' : ''}">
+    <button class="grp" data-grp="${g.id}" draggable="true" title="${t('nav.drag')}"
+      onclick="toggleGrp('${g.id}')"
+      ondragstart="navDragStart(event,'grp','${g.id}')" ondragover="navDragOver(event)" ondragleave="navDragLeave(event)"
+      ondrop="navDrop(event,'grp','${g.id}')" ondragend="navDragEnd()"><span>${esc(g.name)}</span><i class="chev">${s[g.id] ? '▸' : '▾'}</i></button>
+    <div class="grp-items" id="grp-${g.id}" style="${s[g.id] ? 'display:none' : ''}"
+      ondragover="navDragOver(event)" ondragleave="navDragLeave(event)" ondrop="navDrop(event,'grp','${g.id}')">
       ${g.items.map(id=>{
         const l = NAV_LINKS[id]; if(!l) return '';
         if(l.adminOnly && !adm) return '';
-        return `<a href="${l.href}"><span data-i18n="${l.i18n}">${esc(t(l.i18n))}</span>${l.count ? `<span class="count" data-c="${l.count}"></span>` : ''}</a>`;
+        return `<a href="${l.href}" draggable="true" title="${t('nav.drag')}"
+          ondragstart="navDragStart(event,'item','${id}','${g.id}')" ondragover="navDragOver(event)" ondragleave="navDragLeave(event)"
+          ondrop="navDrop(event,'item','${g.id}','${id}')" ondragend="navDragEnd()"><span data-i18n="${l.i18n}">${esc(t(l.i18n))}</span>${l.count ? `<span class="count" data-c="${l.count}"></span>` : ''}</a>`;
       }).join('')}
     </div>`).join('');
   paintCounts();
