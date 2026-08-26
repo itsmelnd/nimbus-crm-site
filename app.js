@@ -25,7 +25,7 @@ en: {
   'task.empty':'No tasks yet.','task.created':'Task created.','task.updated':'Task updated.','task.deleted':'Task deleted.',
   'task.overdue':'Overdue','task.today':'Today','task.allDone':'All tasks done 🎉',
   'confirm.delTask':'Delete task "%s"?',
-  'notif.invoice':'Invoice %s is overdue','notif.deal':'%s — expected close passed','notif.task':'Task "%s" is overdue',
+  'notif.invoice':'Invoice %s is overdue','notif.deal':'%s — expected close passed','notif.task':'Task "%s" is overdue','notif.none':'No notifications 🎉','notif.title':'Notifications',
   'grp.sales':'Sales','grp.revenue':'Revenue','grp.system':'System',
   'side.demo':'Demo build — data lives in your Supabase database. No real emails, no real payments.',
   'side.reset':'Reset demo data',
@@ -190,7 +190,7 @@ sv: {
   'task.empty':'Inga uppgifter ännu.','task.created':'Uppgift skapad.','task.updated':'Uppgift uppdaterad.','task.deleted':'Uppgift borttagen.',
   'task.overdue':'Förfallen','task.today':'Idag','task.allDone':'Alla uppgifter är klara 🎉',
   'confirm.delTask':'Ta bort uppgiften "%s"?',
-  'notif.invoice':'Faktura %s är förfallen','notif.deal':'%s — förväntad stängning passerad','notif.task':'Uppgiften "%s" är förfallen',
+  'notif.invoice':'Faktura %s är förfallen','notif.deal':'%s — förväntad stängning passerad','notif.task':'Uppgiften "%s" är förfallen','notif.none':'Inga notiser 🎉','notif.title':'Notiser',
   'grp.sales':'Försäljning','grp.revenue':'Intäkter','grp.system':'System',
   'side.demo':'Demoversion — data ligger i din Supabase-databas. Inga riktiga mejl, inga riktiga betalningar.',
   'side.reset':'Återställ demodata',
@@ -866,23 +866,27 @@ function initNotifications(){
     setTimeout(maybeNotify, 4000);
   }
 }
+function notifItems(){
+  const open = [];
+  for(const i of db.invoices){
+    if(i.status !== 'Paid' && i.status !== 'Void' && i.due && i.due < iso(today()))
+      open.push({id:'inv_'+i.id, title:t('notif.invoice', i.no), body:company(i.companyId), href:'#/invoices'});
+  }
+  for(const d of db.deals){
+    if(!['Won','Lost'].includes(d.stage) && d.close && d.close < iso(today()))
+      open.push({id:'deal_'+d.id, title:t('notif.deal', d.title), body:company(d.companyId), href:'#/pipeline'});
+  }
+  for(const x of db.tasks){
+    if(!x.done && x.due && x.due < iso(today()))
+      open.push({id:'task_'+x.id, title:t('notif.task', x.title), body:taskRef(x), href:'#/tasks'});
+  }
+  return open;
+}
 function maybeNotify(){
   if(!notifReady || !sb || !ME || !('Notification' in window) || Notification.permission !== 'granted') return;
   let notified = [];
   try{ notified = JSON.parse(localStorage.getItem('nimbus-notified') || '[]'); }catch(e){}
-  const open = [];
-  for(const i of db.invoices){
-    if(i.status !== 'Paid' && i.status !== 'Void' && i.due && i.due < iso(today()))
-      open.push({id:'inv_'+i.id, title:t('notif.invoice', i.no), body:company(i.companyId) || ''});
-  }
-  for(const d of db.deals){
-    if(!['Won','Lost'].includes(d.stage) && d.close && d.close < iso(today()))
-      open.push({id:'deal_'+d.id, title:t('notif.deal', d.title), body:company(d.companyId)});
-  }
-  for(const x of db.tasks){
-    if(!x.done && x.due && x.due < iso(today()))
-      open.push({id:'task_'+x.id, title:t('notif.task', x.title), body:taskRef(x)});
-  }
+  const open = notifItems();
   const current = open.map(o=>o.id);
   const fresh = open.filter(o=>!notified.includes(o.id));
   for(const o of fresh){
@@ -1220,6 +1224,7 @@ function onDealSearch(){ const w = document.getElementById('boardwrap'); if(w) w
 function vPipeline(){
   const total = db.deals.filter(d=>!['Won','Lost'].includes(d.stage)).reduce((s,d)=>s+d.value,0);
   head(t('nav.pipeline'), t('pipeline.sub', money(total)),
+    `<button class="sm" id="notifbtn" title="${t('notif.title')}" onclick="toggleNotifPanel()">🔔 <span class="notif-badge" id="notif-badge"></span></button>` +
     `<button class="sm" id="boardbtn" onclick="toggleBoard()">${t(compactBoard?'board.roomy':'board.compact')}</button>` +
     adminOnly(`<button class="primary" onclick="newDeal()">${t('btn.newDeal')}</button>`));
   view().innerHTML = `<div class="listbar"><input id="q" placeholder="${t('list.search')}" oninput="onDealSearch()"></div>
@@ -2517,12 +2522,37 @@ function route(){
   for(const [re,fn] of ROUTES){ const m = h.match(re); if(m){ fn(m[1]); paintCounts(); return; } }
   notFound();
 }
+function paintNotifBadge(){
+  const b = document.getElementById('notif-badge'); if(!b) return;
+  const n = (db ? notifItems() : []).length;
+  b.textContent = n || '';
+  b.style.display = n ? 'inline-block' : 'none';
+}
+function toggleNotifPanel(){
+  const old = document.getElementById('notifpanel');
+  if(old){ old.remove(); return; }
+  const btn = document.getElementById('notifbtn'); if(!btn) return;
+  const r = btn.getBoundingClientRect();
+  const items = notifItems();
+  const p = document.createElement('div');
+  p.id = 'notifpanel';
+  p.style.cssText = 'position:fixed;top:' + (r.bottom + 6) + 'px;left:' + r.left + 'px;min-width:300px;max-width:380px;max-height:60vh;overflow:auto;background:var(--card,#fff);border:1px solid var(--line,#e3e6ec);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.18);z-index:90;padding:6px';
+  p.innerHTML = items.length
+    ? items.map(n=>`<a href="${n.href}" onclick="document.getElementById('notifpanel')?.remove()"
+        style="display:block;padding:8px 10px;border-radius:8px;text-decoration:none;color:inherit"
+        onmouseover="this.style.background='var(--card2,#f5f6f8)'" onmouseout="this.style.background=''">
+        <div style="font-size:13px;font-weight:600">${esc(n.title)}</div>
+        ${n.body ? `<div class="muted" style="font-size:12px">${n.body}</div>` : ''}</a>`).join('')
+    : `<div style="padding:14px;text-align:center;font-size:13px" class="muted">${t('notif.none')}</div>`;
+  document.body.appendChild(p);
+}
 function paintCounts(){
   const d = db || {};
   const c = {deals:(d.deals||[]).filter(x=>!['Won','Lost'].includes(x.stage)).length,
     quotes:(d.quotes||[]).length, invoices:(d.invoices||[]).filter(i=>i.status!=='Paid').length,
     payments:(d.payments||[]).length};
   document.querySelectorAll('[data-c]').forEach(e=>e.textContent = c[e.dataset.c] ?? '');
+  paintNotifBadge();
 }
 window.addEventListener('hashchange', route);
 (async function init(){
